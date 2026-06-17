@@ -204,10 +204,10 @@
 
     .filter-bar__chip {
       padding: 6px 12px;
-      border: 1.5px solid rgba(118,75,162,0.12);
+      border: 1.5px solid rgba(118,75,162,0.2);
       border-radius: 20px;
-      background: rgba(118,75,162,0.05);
-      color: var(--text-light);
+      background: rgba(118,75,162,0.07);
+      color: #4a4a6a;
       font-size: 12px;
       cursor: pointer;
       transition: all 0.25s ease;
@@ -359,8 +359,8 @@
 
     .wheel-container__center:disabled {
       cursor: not-allowed;
-      opacity: 0.85;
-      transform: translate(-50%, -50%) scale(0.95);
+      opacity: 0;
+      pointer-events: none;
     }
 
     .wheel-container__center-icon {
@@ -630,6 +630,23 @@
       transform: rotate(90deg);
     }
 
+    .modal__reset {
+      padding: 5px 12px;
+      border: 1.5px solid rgba(0,0,0,0.1);
+      background: rgba(0,0,0,0.04);
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-light);
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .modal__reset:hover {
+      background: rgba(102,126,234,0.1);
+      border-color: rgba(102,126,234,0.2);
+      color: var(--bg-start);
+    }
+
     .modal__body {
       flex: 1;
       overflow-y: auto;
@@ -639,7 +656,67 @@
     .add-form {
       display: flex;
       gap: 10px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
+    }
+
+    .dish-search {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .dish-search__input {
+      flex: 1;
+      min-width: 120px;
+      padding: 8px 12px;
+      border: 1.5px solid rgba(0,0,0,0.08);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .dish-search__input:focus {
+      border-color: var(--primary);
+    }
+
+    .dish-search__filter {
+      padding: 6px 12px;
+      border: 1.5px solid rgba(102,126,234,0.15);
+      border-radius: 20px;
+      background: rgba(102,126,234,0.06);
+      color: var(--text-light);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .dish-search__filter:hover {
+      background: rgba(102,126,234,0.12);
+    }
+
+    .dish-search__filter--active {
+      background: rgba(255,99,72,0.1);
+      border-color: rgba(255,99,72,0.25);
+      color: var(--accent);
+    }
+
+    .dish-search__filter--blacklist {
+      background: rgba(255,165,2,0.1);
+      border-color: rgba(255,165,2,0.25);
+    }
+
+    .dish-search__filter--blacklist.dish-search__filter--active {
+      background: rgba(255,165,2,0.2);
+      color: #d68910;
+    }
+
+    .dish-list__count {
+      font-size: 12px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+      text-align: right;
     }
 
     .add-form__input {
@@ -700,6 +777,16 @@
     .dish-list__item--blacklisted {
       opacity: 0.55;
       background: rgba(255,99,72,0.06);
+    }
+
+    .dish-list__item--highlighted {
+      background: rgba(123,237,159,0.2) !important;
+      animation: highlight-pulse 1s ease 2;
+    }
+
+    @keyframes highlight-pulse {
+      0%, 100% { box-shadow: none; }
+      50% { box-shadow: 0 0 0 3px rgba(123,237,159,0.5); }
     }
 
     .dish-list__info {
@@ -879,7 +966,18 @@
       }
     }
 
-    @media (max-width: 480px) {
+    .scene-bar__btn:focus-visible,
+    .filter-bar__chip:focus-visible,
+    .toolbar__btn:focus-visible,
+    .modal__reset:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .wheel-container__center:focus-visible {
+      outline: 3px solid var(--secondary);
+      outline-offset: 3px;
+    }
       .app {
         padding: 16px 12px 90px;
       }
@@ -1027,7 +1125,7 @@
       </div>
 
       <div class="actions">
-        <button class="actions__btn actions__btn--spin" id="spinBtn">🎯 今天吃什么</button>
+        <button class="actions__btn actions__btn--spin" id="spinBtn" aria-label="转动转盘抽选菜品">🎯 今天吃什么</button>
       </div>
 
       <div class="result" id="resultArea">
@@ -1044,22 +1142,32 @@
   </div>
 
   <div class="toolbar">
-    <button class="toolbar__btn" id="manageBtn">🍽️ 管理菜品</button>
-    <button class="toolbar__btn" id="soundBtn">🔊 音效</button>
-    <button class="toolbar__btn" id="shareBtn">📤 分享</button>
+    <button class="toolbar__btn" id="manageBtn" aria-label="打开菜品管理">🍽️ 管理菜品</button>
+    <button class="toolbar__btn" id="soundBtn" aria-label="开关音效">🔊 音效</button>
+    <button class="toolbar__btn" id="shareBtn" aria-label="分享抽选结果">📤 分享</button>
   </div>
 
-  <div class="modal-overlay" id="modalOverlay">
+  <div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal">
       <div class="modal__header">
-        <h2 class="modal__title">管理菜品</h2>
-        <button class="modal__close" id="modalClose">&times;</button>
+        <h2 class="modal__title" id="modalTitle">管理菜品</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="modal__reset" id="resetDishesBtn" title="恢复预置菜品">🔄 重置</button>
+          <button class="modal__close" id="modalClose">&times;</button>
+        </div>
       </div>
       <div class="modal__body">
         <div class="add-form">
           <input class="add-form__input" id="dishInput" type="text" placeholder="输入菜品名称，回车添加" maxlength="20">
           <button class="add-form__btn" id="addDishBtn">添加</button>
         </div>
+        <div class="dish-search">
+          <input class="dish-search__input" id="dishSearch" type="text" placeholder="搜索菜品…" maxlength="20">
+          <button class="dish-search__filter dish-search__filter--custom${state.dishSearchFilter === 'custom' ? ' dish-search__filter--active' : ''}" data-search-filter="custom">自定义</button>
+          <button class="dish-search__filter dish-search__filter--blacklist${state.dishSearchFilter === 'blacklist' ? ' dish-search__filter--active' : ''}" data-search-filter="blacklist">踩雷</button>
+          <button class="dish-search__filter${state.dishSearchFilter === 'all' ? ' dish-search__filter--active' : ''}" data-search-filter="all">全部</button>
+        </div>
+        <div class="dish-list__count" id="dishCount"></div>
         <ul class="dish-list" id="dishList"></ul>
       </div>
     </div>
@@ -1177,6 +1285,8 @@ function weightedRandom(dishes) {
 let state = {
   dishes: [],
   currentScene: '不限',
+  dishSearchQuery: '',
+  dishSearchFilter: 'all', // 'all' | 'custom' | 'blacklist'
   filters: {
     excludeSpicy: false,
     excludeNoodles: false,
@@ -1197,37 +1307,43 @@ function getAudioContext() {
   return audioCtx;
 }
 
+const SOUND_CONFIG = {
+  tick: { frequency: 800, duration: 0.05, type: 'sine', gain: 0.1 },
+  result: { notes: [523, 659, 784], noteDuration: 0.4, noteGap: 0.12, type: 'sine', gain: 0.15 },
+};
+
 function playTickSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
+  const { frequency, duration, type, gain: gainVal } = SOUND_CONFIG.tick;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.connect(gain);
   gain.connect(ctx.destination);
-  osc.frequency.value = 800;
-  osc.type = 'sine';
-  gain.gain.setValueAtTime(0.1, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+  osc.frequency.value = frequency;
+  osc.type = type;
+  gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
   osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.05);
+  osc.stop(ctx.currentTime + duration);
 }
 
 function playResultSound() {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
-  const notes = [523, 659, 784];
+  const { notes, noteDuration, noteGap, type, gain: gainVal } = SOUND_CONFIG.result;
   notes.forEach((freq, i) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.frequency.value = freq;
-    osc.type = 'sine';
-    const startTime = ctx.currentTime + i * 0.12;
-    gain.gain.setValueAtTime(0.15, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+    osc.type = type;
+    const startTime = ctx.currentTime + i * noteGap;
+    gain.gain.setValueAtTime(gainVal, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + noteDuration);
     osc.start(startTime);
-    osc.stop(startTime + 0.4);
+    osc.stop(startTime + noteDuration);
   });
 }
 
@@ -1364,17 +1480,17 @@ function renderWheel() {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // 虚线圆环 + 居中提示文字，中心按钮被 HTML 元素覆盖所以文字放在偏上位置
+    // 空状态居中显示，中心按钮隐藏后不再遮挡
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.font = '28px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🍽️', WHEEL_CENTER, WHEEL_CENTER - 70);
+    ctx.fillText('🍽️', WHEEL_CENTER, WHEEL_CENTER - 40);
     ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('暂无菜品', WHEEL_CENTER, WHEEL_CENTER - 38);
+    ctx.fillText('暂无菜品', WHEEL_CENTER, WHEEL_CENTER - 8);
     ctx.font = '12px sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.65)';
-    ctx.fillText('请添加或调整过滤', WHEEL_CENTER, WHEEL_CENTER - 20);
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillText('点击下方按钮添加', WHEEL_CENTER, WHEEL_CENTER + 16);
     return;
   }
 
@@ -1400,11 +1516,14 @@ function renderWheel() {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#fff';
-    ctx.font = `bold ${dishes.length > 12 ? '11px' : '13px'} sans-serif`;
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
     ctx.shadowBlur = 4;
     const textRadius = WHEEL_RADIUS * 0.65;
-    const displayName = dish.name.length > 5 ? dish.name.slice(0, 5) + '…' : dish.name;
+    // 动态字号：8~13px，根据分区数量线性插值
+    const fontSize = Math.max(8, Math.min(13, Math.round(104 / dishes.length)));
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    const maxLen = Math.max(3, Math.round(7 - (dishes.length - 6) * 0.4));
+    const displayName = dish.name.length > maxLen ? dish.name.slice(0, maxLen) + '…' : dish.name;
     ctx.fillText(displayName, textRadius, 0);
     ctx.restore();
   });
@@ -1417,7 +1536,9 @@ function spinWheel() {
   if (isSpinning) return;
   const dishes = filterDishes(state.dishes, state.currentScene, state.filters);
   if (dishes.length === 0) {
-    showResult('暂无可选菜品，请添加或调整过滤条件', '❓');
+    // 无菜品时引导用户添加
+    openModal();
+    showToast('还没有菜品，先去添加一些吧');
     return;
   }
 
@@ -1490,28 +1611,83 @@ function hideResult() {
   currentResult = null;
 }
 
-function openModal() {
-  document.getElementById('modalOverlay').classList.add('modal-overlay--visible');
+function resetDishes() {
+  if (!confirm('确定要重置所有菜品吗？自定义菜品将被清除，恢复预置菜品。')) return;
+  state.dishes = PRESET_DISHES.map(d => ({
+    id: generateId(),
+    name: d.name,
+    tags: d.tags,
+    scenes: d.scenes,
+    weight: 5,
+    lastEaten: null,
+    isBlacklisted: false,
+    isCustom: false,
+  }));
+  saveData(state);
   renderDishList();
+  renderWheel();
+  showToast('已恢复预置菜品');
+}
+
+function openModal(addedDishId) {
+  // 每次打开时重置搜索状态
+  state.dishSearchQuery = '';
+  state.dishSearchFilter = 'all';
+  const searchInput = document.getElementById('dishSearch');
+  if (searchInput) searchInput.value = '';
+  renderFilterButtons();
+  renderDishList(addedDishId);
+
+  // 搜索输入
+  searchInput.addEventListener('input', e => {
+    state.dishSearchQuery = e.target.value.trim();
+    renderDishList();
+  });
+
+  // 分类筛选
+  document.querySelectorAll('[data-search-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.dishSearchFilter = btn.dataset.searchFilter;
+      renderFilterButtons();
+      renderDishList();
+    });
+  });
+}
+
+function renderFilterButtons() {
+  document.querySelectorAll('[data-search-filter]').forEach(btn => {
+    btn.classList.toggle('dish-search__filter--active', btn.dataset.searchFilter === state.dishSearchFilter);
+  });
 }
 
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('modal-overlay--visible');
 }
 
-function renderDishList() {
+function renderDishList(highlightId) {
   const list = document.getElementById('dishList');
-  if (state.dishes.length === 0) {
+  const countEl = document.getElementById('dishCount');
+
+  // 应用搜索 + 筛选条件
+  const query = state.dishSearchQuery.toLowerCase();
+  let filtered = state.dishes;
+  if (query) filtered = filtered.filter(d => d.name.toLowerCase().includes(query));
+  if (state.dishSearchFilter === 'custom') filtered = filtered.filter(d => d.isCustom);
+  if (state.dishSearchFilter === 'blacklist') filtered = filtered.filter(d => d.isBlacklisted);
+
+  countEl.textContent = `共 ${filtered.length} 道菜${filtered.length !== state.dishes.length ? '（已筛选）' : ''}`;
+
+  if (filtered.length === 0) {
     list.innerHTML = `
       <li class="empty-state">
-        <div class="empty-state__icon">🍽️</div>
-        <div class="empty-state__text">还没有菜品，快去添加吧！</div>
+        <div class="empty-state__icon">${state.dishSearchQuery ? '🔍' : '🍽️'}</div>
+        <div class="empty-state__text">${state.dishSearchQuery ? '没有找到匹配的菜品' : '还没有菜品，快去添加吧！'}</div>
       </li>`;
     return;
   }
 
-  list.innerHTML = state.dishes.map(dish => `
-    <li class="dish-list__item${dish.isBlacklisted ? ' dish-list__item--blacklisted' : ''}" data-id="${dish.id}">
+  list.innerHTML = filtered.map(dish => `
+    <li class="dish-list__item${dish.isBlacklisted ? ' dish-list__item--blacklisted' : ''}${dish.id === highlightId ? ' dish-list__item--highlighted' : ''}" data-id="${dish.id}">
       <div class="dish-list__info">
         <span class="dish-list__name">${dish.isBlacklisted ? '<s>' : ''}${dish.name}${dish.isBlacklisted ? '</s>' : ''}</span>
         <div class="dish-list__meta">
@@ -1529,6 +1705,14 @@ function renderDishList() {
       </div>
     </li>
   `).join('');
+
+  // 新增菜品后自动滚动到该条目并高亮
+  if (highlightId) {
+    requestAnimationFrame(() => {
+      const el = list.querySelector(`[data-id="${highlightId}"]`);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
 }
 
 function addDish() {
@@ -1542,7 +1726,7 @@ function addDish() {
     return;
   }
 
-  state.dishes.push({
+  const newDish = {
     id: generateId(),
     name,
     tags: ['自定义'],
@@ -1551,11 +1735,12 @@ function addDish() {
     lastEaten: null,
     isBlacklisted: false,
     isCustom: true,
-  });
+  };
 
+  state.dishes.push(newDish);
   saveData(state);
   input.value = '';
-  renderDishList();
+  renderDishList(newDish.id);
   renderWheel();
 }
 
@@ -1644,12 +1829,18 @@ function bindEvents() {
   document.getElementById('wheelCenter').addEventListener('click', spinWheel);
   document.getElementById('respinBtn').addEventListener('click', spinWheel);
   document.getElementById('confirmBtn').addEventListener('click', confirmChoice);
-  document.getElementById('manageBtn').addEventListener('click', openModal);
+  document.getElementById('manageBtn').addEventListener('click', () => openModal());
+  document.getElementById('resetDishesBtn').addEventListener('click', resetDishes);
   document.getElementById('soundBtn').addEventListener('click', toggleSound);
   document.getElementById('shareBtn').addEventListener('click', shareResult);
   document.getElementById('modalClose').addEventListener('click', closeModal);
   document.getElementById('modalOverlay').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('modal-overlay--visible')) {
+      closeModal();
+    }
   });
   document.getElementById('addDishBtn').addEventListener('click', addDish);
   document.getElementById('dishInput').addEventListener('keydown', e => {
