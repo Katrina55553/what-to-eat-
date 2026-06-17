@@ -1630,6 +1630,7 @@ function resetDishes() {
 }
 
 function openModal(addedDishId) {
+  document.getElementById('modalOverlay').classList.add('modal-overlay--visible');
   // 每次打开时重置搜索状态
   state.dishSearchQuery = '';
   state.dishSearchFilter = 'all';
