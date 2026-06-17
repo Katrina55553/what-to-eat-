@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>今天吃什么</title>
+  <style>
+    /* ========== 基础样式 ========== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --color-primary: #ff6b6b;
+      --color-primary-dark: #ee5a24;
+      --color-secondary: #ffa502;
+      --color-bg: #fff5f5;
+      --color-surface: #ffffff;
+      --color-text: #2d3436;
+      --color-text-light: #636e72;
+      --color-border: #eee;
+      --color-success: #2ed573;
+      --color-danger: #ff4757;
+      --radius: 12px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ========== 头部 ========== */
+    .header {
+      text-align: center;
+      padding: 24px 16px 8px;
+    }
+
+    .header__title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--color-primary);
+    }
+
+    .header__subtitle {
+      font-size: 14px;
+      color: var(--color-text-light);
+      margin-top: 4px;
+    }
+
+    /* ========== 场景选择 ========== */
+    .scene-bar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .scene-bar__btn {
+      padding: 6px 16px;
+      border: 2px solid var(--color-border);
+      border-radius: 20px;
+      background: var(--color-surface);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .scene-bar__btn:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    .scene-bar__btn--active {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+    }
+
+    /* ========== 转盘容器 ========== */
+    .wheel-container {
+      position: relative;
+      margin: 16px auto;
+    }
+
+    .wheel-container__canvas {
+      display: block;
+    }
+
+    .wheel-container__pointer {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-top: 24px solid var(--color-primary-dark);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+      z-index: 10;
+    }
+
+    /* ========== 操作按钮区 ========== */
+    .actions {
+      display: flex;
+      gap: 12px;
+      padding: 8px 16px;
+      justify-content: center;
+    }
+
+    .actions__btn {
+      padding: 12px 32px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .actions__btn--spin {
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+    }
+
+    .actions__btn--spin:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255,107,107,0.5);
+    }
+
+    .actions__btn--spin:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .actions__btn--secondary {
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 2px solid var(--color-border);
+    }
+
+    .actions__btn--secondary:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    /* ========== 结果展示 ========== */
+    .result {
+      text-align: center;
+      padding: 16px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .result__text {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--color-primary-dark);
+      opacity: 0;
+      transform: scale(0.8);
+      transition: all 0.3s;
+    }
+
+    .result__text--visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .result__actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .result__actions--visible {
+      opacity: 1;
+    }
+
+    /* ========== 过滤栏 ========== */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 8px 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .filter-bar__chip {
+      padding: 4px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+      background: var(--color-surface);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .filter-bar__chip:hover {
+      border-color: var(--color-secondary);
+    }
+
+    .filter-bar__chip--active {
+      background: var(--color-secondary);
+      color: #fff;
+      border-color: var(--color-secondary);
+    }
+
+    /* ========== 菜品管理弹窗 ========== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .modal-overlay--visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      background: var(--color-surface);
+      border-radius: var(--radius);
+      width: min(90vw, 480px);
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+
+    .modal__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .modal__title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .modal__close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: var(--color-text-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal__close:hover {
+      background: var(--color-border);
+    }
+
+    .modal__body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+    }
+
+    /* ========== 添加菜品表单 ========== */
+    .add-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .add-form__input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .add-form__input:focus {
+      border-color: var(--color-primary);
+    }
+
+    .add-form__btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      background: var(--color-primary);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .add-form__btn:hover {
+      background: var(--color-primary-dark);
+    }
+
+    /* ========== 菜品列表 ========== */
+    .dish-list {
+      list-style: none;
+    }
+
+    .dish-list__item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .dish-list__item--blacklisted {
+      opacity: 0.6;
+    }
+
+    .dish-list__item:last-child {
+      border-bottom: none;
+    }
+
+    .dish-list__name {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .dish-list__tags {
+      display: flex;
+      gap: 4px;
+      margin-left: 8px;
+    }
+
+    .dish-list__tag {
+      font-size: 11px;
+      padding: 2px 6px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      color: var(--color-text-light);
+    }
+
+    .dish-list__delete {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      color: var(--color-danger);
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .dish-list__item:hover .dish-list__delete {
+      opacity: 1;
+    }
+
+    .dish-list__delete:hover {
+      background: #ffe0e0;
+    }
+
+    .dish-list__actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dish-list__blacklist {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .dish-list__item:hover .dish-list__blacklist {
+      opacity: 1;
+    }
+
+    .dish-list__blacklist:hover {
+      background: #fff3e0;
+    }
+
+    .dish-list__blacklist--active {
+      opacity: 1;
+      color: var(--color-danger);
+    }
+
+    .dish-list__weight {
+      font-size: 11px;
+      color: var(--color-text-light);
+      padding: 2px 6px;
+      background: #f8f8f8;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    /* ========== 底部工具栏 ========== */
+    .toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 12px 16px;
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-border);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+
+    .toolbar__btn {
+      padding: 8px 20px;
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      background: var(--color-surface);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toolbar__btn:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+    }
+
+    /* ========== 空状态 ========== */
+    .empty-state {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--color-text-light);
+    }
+
+    .empty-state__icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    .empty-state__text {
+      font-size: 14px;
+    }
+
+    /* ========== 底部留白（避免被工具栏遮挡） ========== */
+    .footer-spacer {
+      height: 60px;
+    }
+
+    /* ========== 提示条 ========== */
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(0,0,0,0.75);
+      color: #fff;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 200;
+      white-space: nowrap;
+    }
+
+    .toast--visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ========== 移动端适配 ========== */
+    @media (max-width: 480px) {
+      .header {
+        padding: 16px 12px 4px;
+      }
+      .header__title {
+        font-size: 22px;
+      }
+      .scene-bar {
+        gap: 6px;
+        padding: 6px 12px;
+      }
+      .scene-bar__btn {
+        padding: 5px 12px;
+        font-size: 13px;
+      }
+      .filter-bar {
+        gap: 6px;
+        padding: 6px 12px;
+      }
+      .filter-bar__chip {
+        padding: 3px 10px;
+        font-size: 11px;
+      }
+      .wheel-container__canvas {
+        width: 280px;
+        height: 280px;
+      }
+      .actions__btn {
+        padding: 10px 24px;
+        font-size: 15px;
+      }
+      .result__text {
+        font-size: 20px;
+      }
+      .modal {
+        width: 95vw;
+        max-height: 85vh;
+      }
+      .modal__body {
+        padding: 12px 16px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .scene-bar__btn {
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+      .wheel-container__canvas {
+        width: 240px;
+        height: 240px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 头部 -->
+  <header class="header">
+    <h1 class="header__title">今天吃什么</h1>
+    <p class="header__subtitle">转一转，帮你做决定！</p>
+  </header>
+
+  <!-- 场景选择 -->
+  <nav class="scene-bar" id="sceneBar"></nav>
+
+  <!-- 过滤栏 -->
+  <div class="filter-bar" id="filterBar"></div>
+
+  <!-- 转盘 -->
+  <div class="wheel-container" id="wheelContainer">
+    <div class="wheel-container__pointer"></div>
+    <canvas class="wheel-container__canvas" id="wheelCanvas" width="320" height="320"></canvas>
+  </div>
+
+  <!-- 操作按钮 -->
+  <div class="actions">
+    <button class="actions__btn actions__btn--spin" id="spinBtn">今天吃什么</button>
+  </div>
+
+  <!-- 结果展示 -->
+  <div class="result" id="resultArea">
+    <div class="result__text" id="resultText"></div>
+    <div class="result__actions" id="resultActions">
+      <button class="actions__btn actions__btn--secondary" id="respinBtn">再抽一次</button>
+      <button class="actions__btn actions__btn--spin" id="confirmBtn">就它了</button>
+    </div>
+  </div>
+
+  <!-- 底部工具栏 -->
+  <div class="toolbar">
+    <button class="toolbar__btn" id="manageBtn">管理菜品</button>
+    <button class="toolbar__btn" id="soundBtn">🔊 音效</button>
+    <button class="toolbar__btn" id="shareBtn">📋 分享结果</button>
+  </div>
+
+  <div class="footer-spacer"></div>
+
+  <!-- 管理弹窗 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal__header">
+        <h2 class="modal__title">管理菜品</h2>
+        <button class="modal__close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal__body">
+        <div class="add-form">
+          <input class="add-form__input" id="dishInput" type="text" placeholder="输入菜品名称，回车添加" maxlength="20">
+          <button class="add-form__btn" id="addDishBtn">添加</button>
+        </div>
+        <ul class="dish-list" id="dishList"></ul>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ================================================================
+   常量定义
+   ================================================================ */
+const SCENES = ['不限', '早餐', '午餐', '晚餐', '夜宵'];
+const FILTERS = [
+  { key: 'excludeSpicy', label: '不吃辣' },
+  { key: 'excludeNoodles', label: '不吃面' },
+  { key: 'excludeRecent', label: '避开最近吃过的' },
+  { key: 'excludeBlacklisted', label: '避开踩雷' },
+];
+const WHEEL_SIZE = 320;
+const WHEEL_CENTER = WHEEL_SIZE / 2;
+const WHEEL_RADIUS = WHEEL_CENTER - 16;
+const SPIN_DURATION = 4000; // 旋转持续时间 ms
+const MIN_ROTATIONS = 5;   // 最少旋转圈数
+
+/* 转盘配色方案 */
+const WHEEL_COLORS = [
+  '#ff6b6b', '#ffa502', '#ff7f50', '#ffbe76',
+  '#f8b739', '#7bed9f', '#70a1ff', '#5352ed',
+  '#ff6348', '#eccc68', '#a4b0be', '#ff9ff3',
+];
+
+/* 预置菜品 */
+const PRESET_DISHES = [
+  // 米饭类
+  { name: '宫保鸡丁', tags: ['米饭类', '家常菜'], scenes: ['午餐', '晚餐'] },
+  { name: '鱼香肉丝', tags: ['米饭类', '家常菜'], scenes: ['午餐', '晚餐'] },
+  { name: '番茄炒蛋', tags: ['米饭类', '家常菜'], scenes: ['午餐', '晚餐'] },
+  { name: '红烧肉', tags: ['米饭类', '家常菜'], scenes: ['午餐', '晚餐'] },
+  { name: '麻婆豆腐', tags: ['米饭类', '川菜'], scenes: ['午餐', '晚餐'] },
+  { name: '回锅肉', tags: ['米饭类', '川菜'], scenes: ['午餐', '晚餐'] },
+  { name: '糖醋里脊', tags: ['米饭类', '家常菜'], scenes: ['午餐', '晚餐'] },
+  // 面条类
+  { name: '炸酱面', tags: ['面条类', '主食'], scenes: ['午餐', '晚餐'] },
+  { name: '牛肉面', tags: ['面条类', '主食'], scenes: ['午餐', '晚餐'] },
+  { name: '担担面', tags: ['面条类', '川菜'], scenes: ['午餐', '晚餐'] },
+  { name: '阳春面', tags: ['面条类', '主食'], scenes: ['早餐', '午餐'] },
+  { name: '刀削面', tags: ['面条类', '主食'], scenes: ['午餐', '晚餐'] },
+  // 火锅类
+  { name: '麻辣火锅', tags: ['火锅类', '聚餐'], scenes: ['晚餐', '夜宵'] },
+  { name: '清汤火锅', tags: ['火锅类', '聚餐'], scenes: ['晚餐', '夜宵'] },
+  { name: '串串香', tags: ['火锅类', '小吃'], scenes: ['晚餐', '夜宵'] },
+  // 小吃类
+  { name: '煎饼果子', tags: ['小吃类', '快餐'], scenes: ['早餐', '午餐'] },
+  { name: '肉夹馍', tags: ['小吃类', '快餐'], scenes: ['早餐', '午餐'] },
+  { name: '烤冷面', tags: ['小吃类', '快餐'], scenes: ['午餐', '夜宵'] },
+  { name: '煎饺', tags: ['小吃类', '快餐'], scenes: ['早餐', '午餐'] },
+  { name: '手抓饼', tags: ['小吃类', '快餐'], scenes: ['早餐', '午餐'] },
+  // 西餐类
+  { name: '披萨', tags: ['西餐类', '快餐'], scenes: ['午餐', '晚餐'] },
+  { name: '汉堡', tags: ['西餐类', '快餐'], scenes: ['午餐', '晚餐'] },
+  { name: '意面', tags: ['西餐类', '主食'], scenes: ['午餐', '晚餐'] },
+  // 早餐专属
+  { name: '豆浆油条', tags: ['小吃类', '早餐'], scenes: ['早餐'] },
+  { name: '小笼包', tags: ['小吃类', '早餐'], scenes: ['早餐'] },
+  { name: '豆腐脑', tags: ['小吃类', '早餐'], scenes: ['早餐'] },
+];
+
+/* ================================================================
+   工具函数
+   ================================================================ */
+
+/** 生成简易 UUID */
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+/** localStorage 读取 */
+function loadData() {
+  try {
+    const raw = localStorage.getItem('whatToEat');
+    if (raw) return JSON.parse(raw);
+  } catch (e) {
+    console.warn('读取本地数据失败:', e);
+  }
+  return null;
+}
+
+/** localStorage 写入 */
+function saveData(data) {
+  try {
+    localStorage.setItem('whatToEat', JSON.stringify(data));
+  } catch (e) {
+    console.warn('保存本地数据失败:', e);
+  }
+}
+
+/** 根据场景和过滤条件筛选菜品 */
+function filterDishes(dishes, scene, filters) {
+  return dishes.filter(dish => {
+    // 场景过滤
+    if (scene !== '不限' && !dish.scenes.includes(scene)) return false;
+    // 过滤踩雷
+    if (filters.excludeBlacklisted && dish.isBlacklisted) return false;
+    // 过滤最近吃过的（3天内）
+    if (filters.excludeRecent && dish.lastEaten) {
+      const daysSince = (Date.now() - dish.lastEaten) / (1000 * 60 * 60 * 24);
+      if (daysSince < 3) return false;
+    }
+    // 过滤辣味（标签含"川菜"或"火锅"视为辣）
+    if (filters.excludeSpicy) {
+      if (dish.tags.includes('川菜') || dish.tags.includes('火锅')) return false;
+    }
+    // 过滤面条
+    if (filters.excludeNoodles && dish.tags.includes('面条类')) return false;
+    return true;
+  });
+}
+
+/** 加权随机选择：权重越高越容易被选中 */
+function weightedRandom(dishes) {
+  if (dishes.length === 0) return null;
+  const totalWeight = dishes.reduce((sum, d) => sum + d.weight, 0);
+  let rand = Math.random() * totalWeight;
+  for (const dish of dishes) {
+    rand -= dish.weight;
+    if (rand <= 0) return dish;
+  }
+  return dishes[dishes.length - 1];
+}
+
+/* ================================================================
+   应用状态
+   ================================================================ */
+let state = {
+  dishes: [],
+  currentScene: '不限',
+  filters: {
+    excludeSpicy: false,
+    excludeNoodles: false,
+    excludeRecent: false,
+    excludeBlacklisted: true, // 默认避开踩雷
+  },
+};
+
+let isSpinning = false;
+let currentResult = null;
+
+/* ================================================================
+   初始化：加载或创建预置数据
+   ================================================================ */
+function initState() {
+  const saved = loadData();
+  if (saved && saved.dishes && saved.dishes.length > 0) {
+    state = saved;
+    // 确保 filters 字段完整
+    state.filters = { ...FILTERS.reduce((acc, f) => ({ ...acc, [f.key]: false }), {}), ...state.filters };
+    // 恢复音效设置
+    if (saved.soundEnabled !== undefined) {
+      soundEnabled = saved.soundEnabled;
+    }
+  } else {
+    // 首次使用：生成预置菜品
+    state.dishes = PRESET_DISHES.map(d => ({
+      id: generateId(),
+      name: d.name,
+      tags: d.tags,
+      scenes: d.scenes,
+      weight: 5,
+      lastEaten: null,
+      isBlacklisted: false,
+      isCustom: false,
+    }));
+    saveData(state);
+  }
+  // 更新音效按钮显示
+  document.getElementById('soundBtn').textContent = soundEnabled ? '🔊 音效' : '🔇 音效';
+}
+
+/* ================================================================
+   渲染：场景栏
+   ================================================================ */
+function renderSceneBar() {
+  const container = document.getElementById('sceneBar');
+  container.innerHTML = SCENES.map(scene => `
+    <button class="scene-bar__btn${scene === state.currentScene ? ' scene-bar__btn--active' : ''}"
+            data-scene="${scene}">${scene}</button>
+  `).join('');
+
+  container.addEventListener('click', e => {
+    const btn = e.target.closest('[data-scene]');
+    if (!btn) return;
+    state.currentScene = btn.dataset.scene;
+    saveData(state);
+    renderSceneBar();
+  });
+}
+
+/* ================================================================
+   渲染：过滤栏
+   ================================================================ */
+function renderFilterBar() {
+  const container = document.getElementById('filterBar');
+  container.innerHTML = FILTERS.map(f => `
+    <button class="filter-bar__chip${state.filters[f.key] ? ' filter-bar__chip--active' : ''}"
+            data-filter="${f.key}">${f.label}</button>
+  `).join('');
+
+  container.addEventListener('click', e => {
+    const chip = e.target.closest('[data-filter]');
+    if (!chip) return;
+    const key = chip.dataset.filter;
+    state.filters[key] = !state.filters[key];
+    saveData(state);
+    renderFilterBar();
+  });
+}
+
+/* ================================================================
+   渲染：转盘
+   ================================================================ */
+function renderWheel() {
+  const canvas = document.getElementById('wheelCanvas');
+  const ctx = canvas.getContext('2d');
+  const dishes = filterDishes(state.dishes, state.currentScene, state.filters);
+
+  ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
+
+  if (dishes.length === 0) {
+    // 空状态：灰色圆
+    ctx.beginPath();
+    ctx.arc(WHEEL_CENTER, WHEEL_CENTER, WHEEL_RADIUS, 0, Math.PI * 2);
+    ctx.fillStyle = '#eee';
+    ctx.fill();
+    ctx.fillStyle = '#999';
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('暂无菜品', WHEEL_CENTER, WHEEL_CENTER);
+    return;
+  }
+
+  const sliceAngle = (Math.PI * 2) / dishes.length;
+
+  dishes.forEach((dish, i) => {
+    const startAngle = i * sliceAngle - Math.PI / 2;
+    const endAngle = startAngle + sliceAngle;
+
+    // 绘制扇形
+    ctx.beginPath();
+    ctx.moveTo(WHEEL_CENTER, WHEEL_CENTER);
+    ctx.arc(WHEEL_CENTER, WHEEL_CENTER, WHEEL_RADIUS, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // 绘制文字
+    ctx.save();
+    ctx.translate(WHEEL_CENTER, WHEEL_CENTER);
+    ctx.rotate(startAngle + sliceAngle / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.font = dishes.length > 12 ? '11px sans-serif' : '13px sans-serif';
+    // 文字位置：扇形中间偏外
+    const textRadius = WHEEL_RADIUS * 0.65;
+    // 限制文字长度
+    const displayName = dish.name.length > 5 ? dish.name.slice(0, 5) + '…' : dish.name;
+    ctx.fillText(displayName, textRadius, 0);
+    ctx.restore();
+  });
+
+  // 中心圆
+  ctx.beginPath();
+  ctx.arc(WHEEL_CENTER, WHEEL_CENTER, 28, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.strokeStyle = '#ddd';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+/* ================================================================
+   转盘旋转动画
+   ================================================================ */
+function spinWheel() {
+  if (isSpinning) return;
+  const dishes = filterDishes(state.dishes, state.currentScene, state.filters);
+  if (dishes.length === 0) {
+    showResult('暂无可选菜品，请添加或调整过滤条件');
+    return;
+  }
+
+  isSpinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  hideResult();
+
+  // 先用加权随机选出结果
+  const selected = weightedRandom(dishes);
+  const selectedIndex = dishes.indexOf(selected);
+  const sliceAngle = 360 / dishes.length;
+
+  // 计算目标角度：让选中的扇形停在指针位置（顶部）
+  // 指针在顶部（12点方向），扇形从3点方向开始逆时针绘制
+  // 需要让 selectedIndex 对应的扇形中心对准顶部
+  const targetSliceCenter = selectedIndex * sliceAngle + sliceAngle / 2;
+  const extraRotations = MIN_ROTATIONS * 360;
+  const targetAngle = extraRotations + (360 - targetSliceCenter);
+
+  const canvas = document.getElementById('wheelCanvas');
+  const startTime = performance.now();
+  let lastTickIndex = -1;
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / SPIN_DURATION, 1);
+
+    // 缓动函数：先快后慢（easeOutQuart）
+    const eased = 1 - Math.pow(1 - progress, 4);
+    const currentAngle = eased * targetAngle;
+
+    canvas.style.transform = `rotate(${currentAngle}deg)`;
+
+    // 每经过一个扇形区域播放一次嘀嗒声
+    const tickIndex = Math.floor((currentAngle % 360) / sliceAngle);
+    if (tickIndex !== lastTickIndex) {
+      lastTickIndex = tickIndex;
+      playTickSound();
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      // 动画结束
+      canvas.style.transform = `rotate(${currentAngle % 360}deg)`;
+      isSpinning = false;
+      document.getElementById('spinBtn').disabled = false;
+      currentResult = selected;
+      showResult(`今天吃 ${selected.name}！`);
+      playResultSound();
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+/* ================================================================
+   结果展示
+   ================================================================ */
+function showResult(text) {
+  const resultText = document.getElementById('resultText');
+  const resultActions = document.getElementById('resultActions');
+  resultText.textContent = text;
+  resultText.classList.add('result__text--visible');
+  resultActions.classList.add('result__actions--visible');
+}
+
+function hideResult() {
+  const resultText = document.getElementById('resultText');
+  const resultActions = document.getElementById('resultActions');
+  resultText.classList.remove('result__text--visible');
+  resultActions.classList.remove('result__actions--visible');
+  currentResult = null;
+}
+
+/* ================================================================
+   菜品管理弹窗
+   ================================================================ */
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('modal-overlay--visible');
+  renderDishList();
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('modal-overlay--visible');
+}
+
+function renderDishList() {
+  const list = document.getElementById('dishList');
+  if (state.dishes.length === 0) {
+    list.innerHTML = `
+      <li class="empty-state">
+        <div class="empty-state__icon">🍽️</div>
+        <div class="empty-state__text">还没有菜品，快去添加吧！</div>
+      </li>`;
+    return;
+  }
+
+  list.innerHTML = state.dishes.map(dish => `
+    <li class="dish-list__item${dish.isBlacklisted ? ' dish-list__item--blacklisted' : ''}" data-id="${dish.id}">
+      <div>
+        <span class="dish-list__name">${dish.isBlacklisted ? '<s>' : ''}${dish.name}${dish.isBlacklisted ? '</s>' : ''}</span>
+        <span class="dish-list__tags">
+          ${dish.tags.map(t => `<span class="dish-list__tag">${t}</span>`).join('')}
+        </span>
+        <span class="dish-list__weight">权重 ${dish.weight}</span>
+      </div>
+      <div class="dish-list__actions">
+        <button class="dish-list__blacklist${dish.isBlacklisted ? ' dish-list__blacklist--active' : ''}"
+                data-blacklist="${dish.id}" title="${dish.isBlacklisted ? '取消踩雷' : '标记踩雷'}">💣</button>
+        <button class="dish-list__delete" data-delete="${dish.id}" title="删除">×</button>
+      </div>
+    </li>
+  `).join('');
+}
+
+function addDish() {
+  const input = document.getElementById('dishInput');
+  const name = input.value.trim();
+  if (!name) return;
+  if (state.dishes.some(d => d.name === name)) {
+    input.value = '';
+    input.placeholder = '菜品已存在！';
+    setTimeout(() => { input.placeholder = '输入菜品名称，回车添加'; }, 1500);
+    return;
+  }
+
+  state.dishes.push({
+    id: generateId(),
+    name,
+    tags: ['自定义'],
+    scenes: ['午餐', '晚餐'],
+    weight: 5,
+    lastEaten: null,
+    isBlacklisted: false,
+    isCustom: true,
+  });
+
+  saveData(state);
+  input.value = '';
+  renderDishList();
+  renderWheel();
+}
+
+function deleteDish(id) {
+  state.dishes = state.dishes.filter(d => d.id !== id);
+  saveData(state);
+  renderDishList();
+  renderWheel();
+}
+
+/** 切换菜品踩雷状态 */
+function toggleBlacklist(id) {
+  const dish = state.dishes.find(d => d.id === id);
+  if (!dish) return;
+  dish.isBlacklisted = !dish.isBlacklisted;
+  // 踩雷时权重降至最低，取消时恢复默认
+  dish.weight = dish.isBlacklisted ? 1 : 5;
+  saveData(state);
+  renderDishList();
+  renderWheel();
+}
+
+/* ================================================================
+   确认选择（标记 lastEaten）
+   ================================================================ */
+function confirmChoice() {
+  if (!currentResult) return;
+  const dish = state.dishes.find(d => d.id === currentResult.id);
+  if (dish) {
+    dish.lastEaten = Date.now();
+    // 确认食用后权重+1（上限10）
+    dish.weight = Math.min(dish.weight + 1, 10);
+    // 同时降低其他同类型菜品的权重（竞争机制）
+    state.dishes.forEach(d => {
+      if (d.id !== dish.id && d.tags.some(t => dish.tags.includes(t))) {
+        d.weight = Math.max(d.weight - 1, 1);
+      }
+    });
+    saveData(state);
+  }
+  hideResult();
+  renderWheel();
+}
+
+/* ================================================================
+   音效系统（Web Audio API，无需外部文件）
+   ================================================================ */
+let audioCtx = null;
+let soundEnabled = true;
+
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+/** 播放旋转音效：短促的嘀嗒声 */
+function playTickSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.frequency.value = 800;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0.1, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.05);
+}
+
+/** 播放结果音效：上升的和弦 */
+function playResultSound() {
+  if (!soundEnabled) return;
+  const ctx = getAudioContext();
+  const notes = [523, 659, 784]; // C5, E5, G5
+  notes.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freq;
+    osc.type = 'sine';
+    const startTime = ctx.currentTime + i * 0.12;
+    gain.gain.setValueAtTime(0.15, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+    osc.start(startTime);
+    osc.stop(startTime + 0.4);
+  });
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  const btn = document.getElementById('soundBtn');
+  btn.textContent = soundEnabled ? '🔊 音效' : '🔇 音效';
+  // 保存音效设置
+  const data = loadData() || state;
+  data.soundEnabled = soundEnabled;
+  localStorage.setItem('whatToEat', JSON.stringify(data));
+}
+
+/* ================================================================
+   分享功能
+   ================================================================ */
+function shareResult() {
+  if (!currentResult) {
+    showToast('还没有抽选结果哦');
+    return;
+  }
+  const text = `我今天吃 ${currentResult.name}！你是吃什么？来转一转吧 🎯`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('已复制到剪贴板，去分享吧！');
+    }).catch(() => {
+      fallbackCopy(text);
+    });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.cssText = 'position:fixed;left:-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    showToast('已复制到剪贴板，去分享吧！');
+  } catch (e) {
+    showToast('复制失败，请手动复制');
+  }
+  document.body.removeChild(textarea);
+}
+
+/** 简单提示条 */
+function showToast(message) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('toast--visible'));
+  setTimeout(() => {
+    toast.classList.remove('toast--visible');
+    setTimeout(() => toast.remove(), 300);
+  }, 2000);
+}
+
+/* ================================================================
+   事件绑定
+   ================================================================ */
+function bindEvents() {
+  document.getElementById('spinBtn').addEventListener('click', spinWheel);
+  document.getElementById('respinBtn').addEventListener('click', spinWheel);
+  document.getElementById('confirmBtn').addEventListener('click', confirmChoice);
+  document.getElementById('manageBtn').addEventListener('click', openModal);
+  document.getElementById('soundBtn').addEventListener('click', toggleSound);
+  document.getElementById('shareBtn').addEventListener('click', shareResult);
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalOverlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+  document.getElementById('addDishBtn').addEventListener('click', addDish);
+  document.getElementById('dishInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addDish();
+  });
+  document.getElementById('dishList').addEventListener('click', e => {
+    const deleteBtn = e.target.closest('[data-delete]');
+    if (deleteBtn) return deleteDish(deleteBtn.dataset.delete);
+    const blacklistBtn = e.target.closest('[data-blacklist]');
+    if (blacklistBtn) return toggleBlacklist(blacklistBtn.dataset.blacklist);
+  });
+}
+
+/* ================================================================
+   启动
+   ================================================================ */
+initState();
+renderSceneBar();
+renderFilterBar();
+renderWheel();
+bindEvents();
+</script>
+</body>
+</html>
