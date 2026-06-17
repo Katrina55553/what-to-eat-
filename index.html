@@ -124,6 +124,15 @@
       animation: fade-in-up 0.5s ease 0.1s both;
     }
 
+    .header__logo {
+      font-size: 38px;
+      line-height: 1;
+      margin-bottom: 4px;
+      display: inline-block;
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
+    }
+
     .header__title {
       font-size: 34px;
       font-weight: 800;
@@ -161,6 +170,14 @@
       font-weight: 500;
       cursor: pointer;
       transition: all 0.25s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .scene-bar__icon {
+      font-size: 14px;
+      line-height: 1;
     }
 
     .scene-bar__btn:hover {
@@ -301,6 +318,63 @@
         0 20px 60px rgba(0,0,0,0.25);
     }
 
+    .wheel-container__center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 78px;
+      height: 78px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: #fff;
+      cursor: pointer;
+      box-shadow:
+        0 0 0 4px rgba(255,255,255,0.9),
+        0 0 0 6px rgba(255,107,107,0.25),
+        0 8px 20px rgba(238,90,36,0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      z-index: 5;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      font-family: inherit;
+      padding: 0;
+    }
+
+    .wheel-container__center:hover {
+      transform: translate(-50%, -50%) scale(1.08);
+      box-shadow:
+        0 0 0 4px rgba(255,255,255,0.9),
+        0 0 0 8px rgba(255,107,107,0.4),
+        0 12px 28px rgba(238,90,36,0.5);
+    }
+
+    .wheel-container__center:active {
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+
+    .wheel-container__center:disabled {
+      cursor: not-allowed;
+      opacity: 0.85;
+      transform: translate(-50%, -50%) scale(0.95);
+    }
+
+    .wheel-container__center-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .wheel-container__center-text {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
     .actions {
       display: flex;
       gap: 12px;
@@ -386,11 +460,15 @@
       background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.75));
       border: 1px solid rgba(255,255,255,0.5);
       border-radius: var(--radius-lg);
-      padding: 20px 28px;
+      padding: 16px 22px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       opacity: 0;
       transform: scale(0.85) translateY(15px);
       transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      max-width: 100%;
     }
 
     .result__card--visible {
@@ -399,10 +477,17 @@
     }
 
     .result__emoji {
-      font-size: 48px;
+      font-size: 38px;
       line-height: 1;
-      margin-bottom: 8px;
+      flex-shrink: 0;
       animation: emoji-bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(255,107,107,0.12), rgba(255,165,2,0.12));
+      border-radius: 50%;
     }
 
     @keyframes emoji-bounce {
@@ -412,10 +497,13 @@
     }
 
     .result__text {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 700;
       color: var(--text);
       line-height: 1.3;
+      text-align: left;
+      flex: 1;
+      min-width: 0;
     }
 
     .result__actions {
@@ -834,18 +922,31 @@
       .wheel-ring {
         inset: -8px;
       }
+      .wheel-container__center {
+        width: 70px;
+        height: 70px;
+      }
+      .wheel-container__center-icon {
+        font-size: 18px;
+      }
+      .wheel-container__center-text {
+        font-size: 11px;
+      }
       .actions__btn {
         padding: 12px 26px;
         font-size: 15px;
       }
       .result__card {
-        padding: 16px 22px;
+        padding: 14px 18px;
+        gap: 12px;
       }
       .result__emoji {
-        font-size: 40px;
+        width: 52px;
+        height: 52px;
+        font-size: 32px;
       }
       .result__text {
-        font-size: 20px;
+        font-size: 19px;
       }
       .modal {
         width: 95vw;
@@ -869,13 +970,29 @@
       .header__title {
         font-size: 24px;
       }
+      .header__logo {
+        font-size: 32px;
+      }
       .wheel-container {
         width: 220px;
         height: 220px;
       }
+      .wheel-container__center {
+        width: 60px;
+        height: 60px;
+      }
+      .wheel-container__center-icon {
+        font-size: 16px;
+      }
+      .wheel-container__center-text {
+        font-size: 10px;
+      }
       .actions__btn {
         padding: 10px 20px;
         font-size: 14px;
+      }
+      .result__text {
+        font-size: 17px;
       }
     }
   </style>
@@ -887,8 +1004,9 @@
   <div class="app">
     <div class="main-card">
       <header class="header">
+        <div class="header__logo">🍱</div>
         <h1 class="header__title">今天吃什么</h1>
-        <p class="header__subtitle">转一转，帮你做决定！</p>
+        <p class="header__subtitle">转一转，帮你做决定</p>
       </header>
 
       <nav class="scene-bar" id="sceneBar"></nav>
@@ -901,6 +1019,10 @@
           <div class="wheel-ring"></div>
           <div class="wheel-container__pointer"></div>
           <canvas class="wheel-container__canvas" id="wheelCanvas" width="300" height="300"></canvas>
+          <button class="wheel-container__center" id="wheelCenter" type="button" aria-label="开始抽选">
+            <span class="wheel-container__center-icon">🎯</span>
+            <span class="wheel-container__center-text">开始</span>
+          </button>
         </div>
       </div>
 
@@ -945,6 +1067,13 @@
 
 <script>
 const SCENES = ['不限', '早餐', '午餐', '晚餐', '夜宵'];
+const SCENE_ICONS = {
+  '不限': '🍽️',
+  '早餐': '🌅',
+  '午餐': '☀️',
+  '晚餐': '🌙',
+  '夜宵': '🌃',
+};
 const FILTERS = [
   { key: 'excludeSpicy', label: '🌶️ 不吃辣' },
   { key: 'excludeNoodles', label: '🍜 不吃面' },
@@ -1182,7 +1311,10 @@ function renderSceneBar() {
   const container = document.getElementById('sceneBar');
   container.innerHTML = SCENES.map(scene => `
     <button class="scene-bar__btn${scene === state.currentScene ? ' scene-bar__btn--active' : ''}"
-            data-scene="${scene}">${scene}</button>
+            data-scene="${scene}">
+      <span class="scene-bar__icon">${SCENE_ICONS[scene]}</span>
+      <span>${scene}</span>
+    </button>
   `).join('');
 
   container.addEventListener('click', e => {
@@ -1216,6 +1348,9 @@ function renderWheel() {
   const ctx = canvas.getContext('2d');
   const dishes = filterDishes(state.dishes, state.currentScene, state.filters);
 
+  // 无可选菜品时禁用中心按钮，避免空转
+  document.getElementById('wheelCenter').disabled = dishes.length === 0;
+
   ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
 
   if (dishes.length === 0) {
@@ -1223,11 +1358,23 @@ function renderWheel() {
     ctx.arc(WHEEL_CENTER, WHEEL_CENTER, WHEEL_RADIUS, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(255,255,255,0.2)';
     ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.font = '16px sans-serif';
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 虚线圆环 + 居中提示文字，中心按钮被 HTML 元素覆盖所以文字放在偏上位置
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.font = '28px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('暂无菜品', WHEEL_CENTER, WHEEL_CENTER);
+    ctx.fillText('🍽️', WHEEL_CENTER, WHEEL_CENTER - 70);
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('暂无菜品', WHEEL_CENTER, WHEEL_CENTER - 38);
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.fillText('请添加或调整过滤', WHEEL_CENTER, WHEEL_CENTER - 20);
     return;
   }
 
@@ -1262,21 +1409,8 @@ function renderWheel() {
     ctx.restore();
   });
 
-  ctx.beginPath();
-  ctx.arc(WHEEL_CENTER, WHEEL_CENTER, 32, 0, Math.PI * 2);
-  ctx.fillStyle = '#fff';
-  ctx.fill();
-  ctx.shadowColor = 'rgba(0,0,0,0.2)';
-  ctx.shadowBlur = 10;
-  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  ctx.shadowBlur = 0;
-
-  ctx.beginPath();
-  ctx.arc(WHEEL_CENTER, WHEEL_CENTER, 8, 0, Math.PI * 2);
-  ctx.fillStyle = 'var(--primary)';
-  ctx.fill();
+  // 中心按钮改用 HTML 元素（.wheel-container__center）渲染，
+  // 避免转盘旋转时 canvas 上的文字随之翻转
 }
 
 function spinWheel() {
@@ -1289,6 +1423,7 @@ function spinWheel() {
 
   isSpinning = true;
   document.getElementById('spinBtn').disabled = true;
+  document.getElementById('wheelCenter').disabled = true;
   document.getElementById('wheelContainer').classList.add('wheel-container--spinning');
   hideResult();
 
@@ -1323,6 +1458,7 @@ function spinWheel() {
       canvas.style.transform = `rotate(${currentAngle % 360}deg)`;
       isSpinning = false;
       document.getElementById('spinBtn').disabled = false;
+      document.getElementById('wheelCenter').disabled = false;
       document.getElementById('wheelContainer').classList.remove('wheel-container--spinning');
       currentResult = selected;
       showResult(`今天吃 ${selected.name}！`);
@@ -1505,6 +1641,7 @@ function showToast(message) {
 
 function bindEvents() {
   document.getElementById('spinBtn').addEventListener('click', spinWheel);
+  document.getElementById('wheelCenter').addEventListener('click', spinWheel);
   document.getElementById('respinBtn').addEventListener('click', spinWheel);
   document.getElementById('confirmBtn').addEventListener('click', confirmChoice);
   document.getElementById('manageBtn').addEventListener('click', openModal);
