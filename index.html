@@ -110,7 +110,7 @@
       height: 100vh;
       height: 100dvh;
       margin: 0 auto;
-      padding: 8px 20px 0;
+      padding: 12px 20px 4px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -131,7 +131,7 @@
         var(--shadow-lg),
         inset 0 1px 0 rgba(255, 255, 255, 0.7),
         inset 0 0 0 1px rgba(255, 255, 255, 0.15);
-      padding: 18px 26px 16px;
+      padding: 22px 28px 18px;
       position: relative;
     }
 
@@ -164,17 +164,23 @@
 
     .header {
       text-align: center;
-      padding: 4px 0 10px;
+      padding: 6px 0 14px;
       flex-shrink: 0;
       position: relative;
     }
 
     .header::after {
-      display: none;
+      content: '';
+      display: block;
+      width: 36px;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, var(--terracotta), transparent);
+      margin: 12px auto 0;
+      border-radius: 2px;
     }
 
     .header__logo {
-      font-size: 32px;
+      font-size: 36px;
       line-height: 1;
       margin-bottom: 2px;
       display: inline-block;
@@ -184,9 +190,9 @@
 
     .header__title {
       font-family: var(--font-serif);
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 900;
-      letter-spacing: 4px;
+      letter-spacing: 5px;
       line-height: 1.1;
       color: var(--ink);
       margin-bottom: 4px;
@@ -199,7 +205,7 @@
       content: 'TODAY';
       position: absolute;
       top: -8px;
-      left: -20px;
+      left: -22px;
       font-family: var(--font-sans);
       font-size: 9px;
       letter-spacing: 4px;
@@ -220,26 +226,26 @@
     .scene-bar {
       display: flex;
       gap: 6px;
-      padding: 0 0 8px;
+      padding: 0 0 12px;
       flex-wrap: wrap;
       justify-content: center;
       flex-shrink: 0;
     }
 
     .scene-bar__btn {
-      padding: 6px 14px;
+      padding: 7px 16px;
       border: 1.5px solid rgba(44, 24, 16, 0.1);
       border-radius: 100px;
       background: rgba(253, 248, 236, 0.6);
       color: var(--ink-soft);
-      font-size: 11.5px;
+      font-size: 12px;
       font-weight: 600;
       letter-spacing: 1px;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       backdrop-filter: blur(4px);
     }
 
@@ -272,19 +278,19 @@
     .filter-bar {
       display: flex;
       gap: 6px;
-      padding: 0 0 10px;
+      padding: 0 0 14px;
       flex-wrap: wrap;
       justify-content: center;
       flex-shrink: 0;
     }
 
     .filter-bar__chip {
-      padding: 5px 12px;
+      padding: 6px 14px;
       border: 1.5px solid rgba(95, 122, 111, 0.18);
       border-radius: 100px;
       background: rgba(95, 122, 111, 0.05);
       color: var(--sage);
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -512,19 +518,19 @@
     }
 
     .actions__btn {
-      padding: 12px 30px;
+      padding: 13px 34px;
       border: none;
       border-radius: 100px;
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 700;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
       overflow: hidden;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
     }
 
     .actions__btn--spin {
@@ -581,7 +587,7 @@
 
     .result {
       text-align: center;
-      padding: 0 0 2px;
+      padding: 0 0 4px;
       min-height: 0;
       display: flex;
       flex-direction: column;
@@ -595,7 +601,7 @@
         linear-gradient(135deg, #fdf8ec 0%, #f8efdb 100%);
       border: 2px solid var(--amber);
       border-radius: var(--radius-lg);
-      padding: 14px 24px;
+      padding: 16px 26px;
       box-shadow:
         var(--shadow-warm),
         inset 0 1px 0 rgba(255, 255, 255, 0.6),
@@ -605,7 +611,7 @@
       transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
       max-width: 100%;
       position: relative;
       overflow: hidden;
@@ -616,7 +622,7 @@
       position: absolute;
       top: 8px;
       right: 12px;
-      font-size: 8px;
+      font-size: 9px;
       letter-spacing: 2px;
       color: var(--terracotta);
       font-weight: 700;
@@ -640,11 +646,11 @@
     }
 
     .result__emoji {
-      font-size: 36px;
+      font-size: 38px;
       line-height: 1;
       flex-shrink: 0;
-      width: 56px;
-      height: 56px;
+      width: 60px;
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -665,7 +671,7 @@
 
     .result__text {
       font-family: var(--font-serif);
-      font-size: 20px;
+      font-size: 21px;
       font-weight: 800;
       color: var(--ink);
       line-height: 1.2;
@@ -678,7 +684,7 @@
     .result__actions {
       display: flex;
       gap: 10px;
-      margin-top: 12px;
+      margin-top: 14px;
       opacity: 0;
       transform: translateY(10px);
       transition: all 0.3s ease 0.15s;
@@ -693,25 +699,25 @@
       display: flex;
       justify-content: center;
       gap: 6px;
-      padding: 5px 12px 10px;
+      padding: 6px 12px 12px;
       flex-shrink: 0;
       z-index: 50;
     }
 
     .toolbar__btn {
-      padding: 7px 16px;
+      padding: 8px 18px;
       border: none;
       border-radius: 100px;
       background: rgba(253, 248, 236, 0.85);
       color: var(--ink-soft);
-      font-size: 11.5px;
+      font-size: 12px;
       font-weight: 600;
-      letter-spacing: 1px;
+      letter-spacing: 1.5px;
       cursor: pointer;
       transition: all 0.25s ease;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       backdrop-filter: blur(24px);
       -webkit-backdrop-filter: blur(24px);
       border: 1px solid rgba(44, 24, 16, 0.06);
@@ -1202,41 +1208,44 @@
         display: none;
       }
       .app {
-        padding: 4px 12px 0;
+        padding: 8px 12px 2px;
       }
       .main-card {
-        padding: 16px 16px 12px;
+        padding: 18px 18px 14px;
         border-radius: 24px;
       }
       .header {
-        padding: 4px 0 8px;
+        padding: 4px 0 10px;
       }
       .header__logo {
-        font-size: 28px;
+        font-size: 30px;
       }
       .header__title {
-        font-size: 24px;
-        letter-spacing: 3px;
+        font-size: 26px;
+        letter-spacing: 4px;
       }
       .header__subtitle {
         font-size: 9px;
         letter-spacing: 2px;
       }
+      .header::after {
+        margin: 8px auto 0;
+      }
       .scene-bar {
         gap: 5px;
-        padding: 0 0 6px;
+        padding: 0 0 10px;
       }
       .scene-bar__btn {
-        padding: 5px 12px;
-        font-size: 11px;
+        padding: 6px 13px;
+        font-size: 11.5px;
       }
       .filter-bar {
         gap: 5px;
-        padding: 0 0 8px;
+        padding: 0 0 10px;
       }
       .filter-bar__chip {
-        padding: 4px 10px;
-        font-size: 10.5px;
+        padding: 5px 11px;
+        font-size: 11px;
       }
       .wheel-container {
         width: 220px;
@@ -1264,20 +1273,20 @@
         height: 240px;
       }
       .actions__btn {
-        padding: 10px 22px;
-        font-size: 12px;
+        padding: 11px 24px;
+        font-size: 12.5px;
       }
       .result__card {
-        padding: 10px 16px;
-        gap: 10px;
+        padding: 12px 18px;
+        gap: 12px;
       }
       .result__emoji {
-        width: 44px;
-        height: 44px;
-        font-size: 28px;
+        width: 48px;
+        height: 48px;
+        font-size: 30px;
       }
       .result__text {
-        font-size: 17px;
+        font-size: 18px;
       }
       .modal {
         width: 95vw;
@@ -1289,18 +1298,18 @@
       }
       .toolbar {
         gap: 4px;
-        padding: 4px 8px 8px;
+        padding: 4px 8px 10px;
       }
       .toolbar__btn {
-        padding: 6px 12px;
-        font-size: 11px;
+        padding: 7px 14px;
+        font-size: 11.5px;
       }
     }
 
     @media (max-width: 360px) {
       .header__title {
         font-size: 22px;
-        letter-spacing: 2px;
+        letter-spacing: 3px;
       }
       .header__logo {
         font-size: 26px;
@@ -1336,6 +1345,11 @@
       }
       .result__text {
         font-size: 15px;
+      }
+      .result__emoji {
+        width: 40px;
+        height: 40px;
+        font-size: 26px;
       }
     }
   </style>
