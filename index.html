@@ -223,6 +223,33 @@
       text-transform: uppercase;
     }
 
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 auto 10px;
+      padding: 8px 22px;
+      background: linear-gradient(135deg, rgba(245, 199, 126, 0.25), rgba(201, 64, 61, 0.12));
+      border: 1.5px solid rgba(201, 64, 61, 0.25);
+      border-radius: 100px;
+      box-shadow: 0 4px 14px rgba(201, 64, 61, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+      flex-shrink: 0;
+    }
+
+    .badge__icon {
+      font-size: 16px;
+      line-height: 1;
+      filter: drop-shadow(0 2px 4px rgba(201, 64, 61, 0.2));
+    }
+
+    .badge__text {
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      color: var(--terracotta);
+      white-space: nowrap;
+    }
+
     .scene-bar {
       display: flex;
       gap: 6px;
@@ -1346,6 +1373,18 @@
       .header::after {
         margin: 8px auto 0;
       }
+      .badge {
+        padding: 6px 16px;
+        margin-bottom: 8px;
+        gap: 8px;
+      }
+      .badge__icon {
+        font-size: 14px;
+      }
+      .badge__text {
+        font-size: 11.5px;
+        letter-spacing: 1px;
+      }
       .scene-bar {
         gap: 5px;
         padding: 0 0 10px;
@@ -1480,6 +1519,11 @@
         <h1 class="header__title">今天吃什么</h1>
         <p class="header__subtitle">让转盘为你决定 · LET THE WHEEL DECIDE</p>
       </header>
+
+      <div class="badge" id="sceneBadge">
+        <span class="badge__icon">🍽️</span>
+        <span class="badge__text" id="badgeText">当前场景：不限</span>
+      </div>
 
       <nav class="scene-bar" id="sceneBar"></nav>
 
@@ -1808,6 +1852,16 @@ function renderSceneBar() {
     </button>
   `).join('');
 
+  const badgeIconEl = document.querySelector('#sceneBadge .badge__icon');
+  const badgeTextEl = document.getElementById('badgeText');
+  if (badgeIconEl && badgeTextEl) {
+    badgeIconEl.textContent = state.currentScene === '不限' ? '🍽️' : (SCENE_ICONS[state.currentScene] || '🍽️');
+    badgeTextEl.textContent = `当前场景：${state.currentScene}`;
+  }
+}
+
+function initSceneBarEvents() {
+  const container = document.getElementById('sceneBar');
   container.addEventListener('click', e => {
     const btn = e.target.closest('[data-scene]');
     if (!btn) return;
@@ -2351,6 +2405,7 @@ function bindEvents() {
 
 initState();
 renderSceneBar();
+initSceneBarEvents();
 renderFilterBar();
 renderWheel();
 bindEvents();
