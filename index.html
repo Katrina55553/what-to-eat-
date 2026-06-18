@@ -990,6 +990,13 @@
       border-color: rgba(214, 138, 60, 0.2);
     }
 
+    .dish-list__item--editing {
+      background: #fff !important;
+      border-color: var(--terracotta) !important;
+      box-shadow: 0 0 0 3px rgba(201, 64, 61, 0.1);
+      opacity: 1 !important;
+    }
+
     .dish-list__item--highlighted {
       animation: highlight-pulse 1s ease 2;
       border-color: var(--amber) !important;
@@ -1069,6 +1076,7 @@
     }
 
     .dish-list__blacklist,
+    .dish-list__edit,
     .dish-list__delete {
       width: 34px;
       height: 34px;
@@ -1082,6 +1090,12 @@
       transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
       font-size: 16px;
       color: var(--ink-soft);
+    }
+
+    .dish-list__edit:hover {
+      background: rgba(95, 122, 111, 0.15);
+      color: var(--sage);
+      transform: scale(1.1);
     }
 
     .dish-list__blacklist:hover {
@@ -1102,6 +1116,107 @@
     .dish-list__delete:hover {
       background: rgba(201, 64, 61, 0.15);
       transform: scale(1.1);
+    }
+
+    /* 内联编辑表单 */
+    .dish-edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .dish-edit-form__row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dish-edit-form__label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink-soft);
+      letter-spacing: 1px;
+      white-space: nowrap;
+      min-width: 36px;
+    }
+
+    .dish-edit-form__input {
+      flex: 1;
+      padding: 7px 12px;
+      border: 1.5px solid rgba(44, 24, 16, 0.12);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      color: var(--ink);
+      background: rgba(253, 248, 236, 0.6);
+      transition: border-color 0.2s;
+    }
+
+    .dish-edit-form__input:focus {
+      outline: none;
+      border-color: var(--terracotta);
+      box-shadow: 0 0 0 3px rgba(201, 64, 61, 0.1);
+    }
+
+    .dish-edit-form__scenes {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .dish-edit-form__scene-chip {
+      padding: 4px 12px;
+      border: 1.5px solid rgba(44, 24, 16, 0.12);
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(253, 248, 236, 0.5);
+      color: var(--ink-soft);
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .dish-edit-form__scene-chip--active {
+      background: var(--terracotta);
+      border-color: var(--terracotta);
+      color: #fff;
+    }
+
+    .dish-edit-form__actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .dish-edit-form__btn {
+      padding: 6px 16px;
+      border: none;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .dish-edit-form__btn--save {
+      background: var(--terracotta);
+      color: #fff;
+    }
+
+    .dish-edit-form__btn--save:hover {
+      background: var(--terracotta-deep);
+    }
+
+    .dish-edit-form__btn--cancel {
+      background: rgba(44, 24, 16, 0.06);
+      color: var(--ink-soft);
+    }
+
+    .dish-edit-form__btn--cancel:hover {
+      background: rgba(44, 24, 16, 0.12);
     }
 
     .empty-state {
@@ -1546,6 +1661,7 @@ let state = {
   currentScene: '不限',
   dishSearchQuery: '',
   dishSearchFilter: 'all', // 'all' | 'custom' | 'blacklist'
+  editingDishId: null,
   filters: {
     excludeSpicy: false,
     excludeNoodles: false,
@@ -1961,6 +2077,7 @@ function renderDishList(highlightId) {
       <div class="dish-list__actions">
         <button class="dish-list__blacklist${dish.isBlacklisted ? ' dish-list__blacklist--active' : ''}"
                 data-blacklist="${dish.id}" title="${dish.isBlacklisted ? '取消踩雷' : '标记踩雷'}">💣</button>
+        <button class="dish-list__edit" data-edit="${dish.id}" title="编辑">✎</button>
         <button class="dish-list__delete" data-delete="${dish.id}" title="删除">×</button>
       </div>
     </li>
@@ -2001,6 +2118,118 @@ function addDish() {
   saveData(state);
   input.value = '';
   renderDishList(newDish.id);
+  renderWheel();
+}
+
+function startEditDish(dishId) {
+  // 如果正在编辑其他菜品，先取消
+  if (state.editingDishId && state.editingDishId !== dishId) {
+    cancelEditDish(state.editingDishId);
+  }
+
+  const dish = state.dishes.find(d => d.id === dishId);
+  if (!dish) return;
+
+  const el = document.querySelector(`.dish-list__item[data-id="${dishId}"]`);
+  if (!el) return;
+
+  state.editingDishId = dishId;
+  el.classList.add('dish-list__item--editing');
+
+  const sceneLabels = ['早餐', '午餐', '晚餐', '夜宵'];
+  el.innerHTML = `
+    <div class="dish-edit-form">
+      <div class="dish-edit-form__row">
+        <span class="dish-edit-form__label">名称</span>
+        <input class="dish-edit-form__input" id="editName_${dishId}" value="${dish.name}" maxlength="20">
+      </div>
+      <div class="dish-edit-form__row">
+        <span class="dish-edit-form__label">标签</span>
+        <input class="dish-edit-form__input" id="editTags_${dishId}" value="${dish.tags.join('、')}" placeholder="用逗号或顿号分隔" maxlength="30">
+      </div>
+      <div class="dish-edit-form__row">
+        <span class="dish-edit-form__label">场景</span>
+        <div class="dish-edit-form__scenes" id="editScenes_${dishId}">
+          ${sceneLabels.map(s => `
+            <span class="dish-edit-form__scene-chip${dish.scenes.includes(s) ? ' dish-edit-form__scene-chip--active' : ''}" data-scene="${s}">${s}</span>
+          `).join('')}
+        </div>
+      </div>
+      <div class="dish-edit-form__row">
+        <span class="dish-edit-form__label">权重</span>
+        <input class="dish-edit-form__input" id="editWeight_${dishId}" type="number" value="${dish.weight}" min="1" max="10" style="width:70px;flex:none;">
+      </div>
+      <div class="dish-edit-form__actions">
+        <button class="dish-edit-form__btn dish-edit-form__btn--cancel" data-cancel-edit="${dishId}">取消</button>
+        <button class="dish-edit-form__btn dish-edit-form__btn--save" data-save-edit="${dishId}">保存</button>
+      </div>
+    </div>
+  `;
+
+  // 场景 chip 点击切换
+  document.getElementById(`editScenes_${dishId}`).addEventListener('click', (e) => {
+    const chip = e.target.closest('.dish-edit-form__scene-chip');
+    if (!chip) return;
+    chip.classList.toggle('dish-edit-form__scene-chip--active');
+  });
+
+  // 名称输入框自动聚焦
+  document.getElementById(`editName_${dishId}`).focus();
+
+  // 回车保存
+  const editContainer = el.querySelector('.dish-edit-form');
+  editContainer.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+      e.preventDefault();
+      saveEditDish(dishId);
+    }
+    if (e.key === 'Escape') {
+      cancelEditDish(dishId);
+    }
+  });
+}
+
+function cancelEditDish(dishId) {
+  state.editingDishId = null;
+  renderDishList();
+}
+
+function saveEditDish(dishId) {
+  const dish = state.dishes.find(d => d.id === dishId);
+  if (!dish) return;
+
+  const nameEl = document.getElementById(`editName_${dishId}`);
+  const tagsEl = document.getElementById(`editTags_${dishId}`);
+  const weightEl = document.getElementById(`editWeight_${dishId}`);
+
+  if (!nameEl || !tagsEl || !weightEl) return;
+
+  const name = nameEl.value.trim();
+  if (!name) return;
+
+  // 检查是否与其他菜品重名
+  if (state.dishes.some(d => d.name === name && d.id !== dishId)) {
+    nameEl.style.borderColor = 'var(--terracotta)';
+    nameEl.focus();
+    return;
+  }
+
+  const tags = tagsEl.value.split(/[,，、]/).map(t => t.trim()).filter(Boolean);
+  const weight = Math.max(1, Math.min(10, parseInt(weightEl.value) || dish.weight));
+
+  // 获取已选场景
+  const sceneChips = document.querySelectorAll(`#editScenes_${dishId} .dish-edit-form__scene-chip--active`);
+  const scenes = Array.from(sceneChips).map(c => c.dataset.scene);
+  if (scenes.length === 0) scenes.push('午餐', '晚餐');
+
+  dish.name = name;
+  dish.tags = tags.length > 0 ? tags : ['自定义'];
+  dish.scenes = scenes;
+  dish.weight = weight;
+
+  saveData(state);
+  state.editingDishId = null;
+  renderDishList(dishId);
   renderWheel();
 }
 
@@ -2111,6 +2340,12 @@ function bindEvents() {
     if (deleteBtn) return deleteDish(deleteBtn.dataset.delete);
     const blacklistBtn = e.target.closest('[data-blacklist]');
     if (blacklistBtn) return toggleBlacklist(blacklistBtn.dataset.blacklist);
+    const editBtn = e.target.closest('[data-edit]');
+    if (editBtn) return startEditDish(editBtn.dataset.edit);
+    const saveBtn = e.target.closest('[data-save-edit]');
+    if (saveBtn) return saveEditDish(saveBtn.dataset.saveEdit);
+    const cancelBtn = e.target.closest('[data-cancel-edit]');
+    if (cancelBtn) return cancelEditDish(cancelBtn.dataset.cancelEdit);
   });
 }
 
