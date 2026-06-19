@@ -1,6 +1,10 @@
 # 今天吃什么 🍜
 
+[![GitHub Pages](https://img.shields.io/badge/在线体验-GitHub%20Pages-ef4444?logo=github)](https://katrina55553.github.io/what-to-eat-/)
+
 让转盘为你决定今天吃什么 —— 一个简洁、温暖的转盘决策应用。
+
+> 🌐 **在线地址**：[https://katrina55553.github.io/what-to-eat-/](https://katrina55553.github.io/what-to-eat-/)
 
 ---
 
@@ -29,11 +33,16 @@
 
 ---
 
-## 🚀 使用方法
+## 🚀 快速开始
+
+| 平台 | 方式 |
+|------|------|
+| 🌐 网页版 | [直接在线体验](https://katrina55553.github.io/what-to-eat-/) 或本地打开 `index.html` |
+| 📱 微信小程序 | 用 **微信开发者工具** 导入项目根目录 |
 
 ### 网页版
 
-1. **打开应用**：直接用浏览器打开 `index.html`，无需任何服务器或构建
+1. **打开应用**：访问 [在线地址](https://katrina55553.github.io/what-to-eat-/) 或直接用浏览器打开 `index.html`
 2. **选择场景**：早餐 / 午餐 / 晚餐 / 夜宵 / 不限
 3. **开始抽选**：点击「开始抽选」按钮，等待转盘旋转
 4. **查看结果**：结果卡显示抽中的菜品
@@ -110,6 +119,13 @@ what-to-eat/
 ├── CLAUDE.md               # 项目开发说明
 └── README.md               # 用户文档（本文件）
 ```
+
+---
+
+## 🔗 相关链接
+
+- 🌐 在线体验：[https://katrina55553.github.io/what-to-eat-/](https://katrina55553.github.io/what-to-eat-/)
+- 💻 项目仓库：[https://github.com/Katrina55553/what-to-eat-](https://github.com/Katrina55553/what-to-eat-)
 
 ---
 
