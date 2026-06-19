@@ -13,7 +13,7 @@ const {
   createBgItems,
 } = require('../../utils/data.js');
 
-// Canvas 逻辑尺寸（px），需与 CSS 中 canvas 的实际像素尺寸一致
+// Canvas 逻辑尺寸
 const CANVAS_SIZE = 250;
 const CANVAS_CENTER = CANVAS_SIZE / 2;
 const CANVAS_RADIUS = CANVAS_CENTER - 8;
@@ -51,7 +51,9 @@ Page({
   },
 
   onReady() {
-    this.initCanvas();
+    // 旧版 Canvas API，无需 createSelectorQuery，不会超时
+    this.ctx = wx.createCanvasContext('wheelCanvas', this);
+    this.renderWheel();
   },
 
   onShow() {
@@ -83,56 +85,36 @@ Page({
     return scene === '不限' ? '🍽️' : (SCENE_ICONS[scene] || '🍽️');
   },
 
-  initCanvas() {
-    if (this.canvasInitRetry > 10) return;
-    this.canvasInitRetry = (this.canvasInitRetry || 0) + 1;
-
-    const query = this.createSelectorQuery();
-    query.select('#wheelCanvas').fields({ node: true, size: true }).exec((res) => {
-      if (!res || !res[0] || !res[0].node) {
-        setTimeout(() => this.initCanvas(), 300);
-        return;
-      }
-      const canvas = res[0].node;
-      const ctx = canvas.getContext('2d');
-      const dpr = wx.getWindowInfo ? wx.getWindowInfo().pixelRatio : wx.getSystemInfoSync().pixelRatio;
-      canvas.width = CANVAS_SIZE * dpr;
-      canvas.height = CANVAS_SIZE * dpr;
-      ctx.scale(dpr, dpr);
-      this.canvas = canvas;
-      this.ctx = ctx;
-      this.canvasInitRetry = 0;
-      this.renderWheel();
-    });
-  },
-
   renderWheel() {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const dishes = filterDishes(this.data.dishes, this.data.currentScene, this.data.filters);
 
     this.setData({ wheelDisabled: dishes.length === 0 });
-    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+    // 旧版 Canvas 用 clearRect 前需要先清空路径队列
+    ctx.clearActions();
 
     if (dishes.length === 0) {
       ctx.beginPath();
       ctx.arc(CANVAS_CENTER, CANVAS_CENTER, CANVAS_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(253, 248, 236, 0.6)';
+      ctx.setFillStyle('rgba(253, 248, 236, 0.6)');
       ctx.fill();
-      ctx.strokeStyle = 'rgba(201, 64, 61, 0.2)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 6]);
+      ctx.setStrokeStyle('rgba(201, 64, 61, 0.2)');
+      ctx.setLineWidth(2);
+      ctx.setLineDash([6, 6], 0);
       ctx.stroke();
-      ctx.setLineDash([]);
+      ctx.setLineDash([], 0);
 
-      ctx.fillStyle = 'rgba(44, 24, 16, 0.78)';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.setFillStyle('rgba(44, 24, 16, 0.78)');
+      ctx.setFontSize(14);
+      ctx.setTextAlign('center');
+      ctx.setTextBaseline('middle');
       ctx.fillText('暂无可选菜品', CANVAS_CENTER, CANVAS_CENTER - 12);
-      ctx.font = '12px sans-serif';
-      ctx.fillStyle = 'rgba(44, 24, 16, 0.52)';
+      ctx.setFontSize(12);
+      ctx.setFillStyle('rgba(44, 24, 16, 0.52)');
       ctx.fillText('点击下方菜品管理添加', CANVAS_CENTER, CANVAS_CENTER + 14);
+      ctx.draw();
       return;
     }
 
@@ -145,28 +127,29 @@ Page({
       ctx.moveTo(CANVAS_CENTER, CANVAS_CENTER);
       ctx.arc(CANVAS_CENTER, CANVAS_CENTER, CANVAS_RADIUS, startAngle, endAngle);
       ctx.closePath();
-      ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+      ctx.setFillStyle(WHEEL_COLORS[i % WHEEL_COLORS.length]);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-      ctx.lineWidth = 2;
+      ctx.setStrokeStyle('rgba(255,255,255,0.8)');
+      ctx.setLineWidth(2);
       ctx.stroke();
 
       ctx.save();
       ctx.translate(CANVAS_CENTER, CANVAS_CENTER);
       ctx.rotate(startAngle + sliceAngle / 2);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.3)';
-      ctx.shadowBlur = 4;
+      ctx.setTextAlign('center');
+      ctx.setTextBaseline('middle');
+      ctx.setFillStyle('#fff');
+      ctx.setShadow(0, 0, 4, 'rgba(0,0,0,0.3)');
       const textRadius = CANVAS_RADIUS * 0.65;
       const fontSize = Math.max(8, Math.min(13, Math.round(104 / dishes.length)));
-      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.setFontSize(fontSize);
       const maxLen = Math.max(3, Math.round(7 - (dishes.length - 6) * 0.4));
       const displayName = dish.name.length > maxLen ? dish.name.slice(0, maxLen) + '…' : dish.name;
       ctx.fillText(displayName, textRadius, 0);
       ctx.restore();
     });
+
+    ctx.draw();
   },
 
   onSceneTap(e) {

@@ -31,7 +31,7 @@
       <view class="wheel-container {{isSpinning ? 'wheel-container--spinning' : ''}}" id="wheelContainer" style="transform: rotate({{wheelRotation}}deg);">
         <view class="wheel-ring"></view>
         <view class="wheel-container__pointer"></view>
-        <canvas class="wheel-container__canvas" id="wheelCanvas" type="2d" style="width: 250px; height: 250px;"></canvas>
+        <canvas class="wheel-container__canvas" canvas-id="wheelCanvas" id="wheelCanvas"></canvas>
         <button class="wheel-container__center" id="wheelCenter" type="default" aria-label="开始抽选" disabled="{{wheelDisabled || isSpinning}}" bindtap="spinWheel">
           <text class="wheel-container__center-icon">🎯</text>
           <text class="wheel-container__center-text">GO</text>
