@@ -1095,6 +1095,17 @@
       letter-spacing: 0.5px;
     }
 
+    .dish-list__last-eaten {
+      font-size: 10.5px;
+      color: var(--terracotta);
+      padding: 4px 10px;
+      background: rgba(201, 64, 61, 0.08);
+      border-radius: 6px;
+      white-space: nowrap;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
     .dish-list__actions {
       display: flex;
       align-items: center;
@@ -1606,6 +1617,10 @@ const FILTERS = [
   { key: 'excludeRecent', label: '🕒 避开最近' },
   { key: 'excludeBlacklisted', label: '💣 避开踩雷' },
 ];
+
+const DEFAULT_FILTERS = FILTERS.reduce((acc, f) => ({ ...acc, [f.key]: false }), {});
+// 默认开启“避开踩雷”，黑名单本身就是为了排除，打开更合理
+DEFAULT_FILTERS.excludeBlacklisted = true;
 const WHEEL_SIZE = 250;
 const WHEEL_CENTER = WHEEL_SIZE / 2;
 const WHEEL_RADIUS = WHEEL_CENTER - 12;
@@ -1652,6 +1667,10 @@ const PRESET_DISHES = [
 ];
 
 function generateId() {
+  // 优先使用 UUID，不存在时回退到时间戳+随机串
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
@@ -1673,6 +1692,10 @@ function saveData(data) {
   }
 }
 
+function hasTagLike(tags, keyword) {
+  return tags.some(t => t.toLowerCase().includes(keyword.toLowerCase()));
+}
+
 function filterDishes(dishes, scene, filters) {
   return dishes.filter(dish => {
     if (scene !== '不限' && !dish.scenes.includes(scene)) return false;
@@ -1682,9 +1705,10 @@ function filterDishes(dishes, scene, filters) {
       if (daysSince < 3) return false;
     }
     if (filters.excludeSpicy) {
-      if (dish.tags.includes('川菜') || dish.tags.includes('火锅')) return false;
+      // 不仅匹配预置标签，还兼容用户自定义的“辣/川/火锅”等字样
+      if (hasTagLike(dish.tags, '辣') || hasTagLike(dish.tags, '川') || hasTagLike(dish.tags, '火锅')) return false;
     }
-    if (filters.excludeNoodles && dish.tags.includes('面条类')) return false;
+    if (filters.excludeNoodles && hasTagLike(dish.tags, '面')) return false;
     return true;
   });
 }
@@ -1700,18 +1724,23 @@ function weightedRandom(dishes) {
   return dishes[dishes.length - 1];
 }
 
+function formatLastEaten(timestamp) {
+  if (!timestamp) return '';
+  const days = Math.floor((Date.now() - timestamp) / (1000 * 60 * 60 * 24));
+  if (days === 0) return '今天吃过';
+  if (days === 1) return '昨天吃过';
+  if (days < 7) return `${days} 天前吃过`;
+  if (days < 30) return `${Math.floor(days / 7)} 周前吃过`;
+  return '很久以前吃过';
+}
+
 let state = {
   dishes: [],
   currentScene: '不限',
   dishSearchQuery: '',
   dishSearchFilter: 'all', // 'all' | 'custom' | 'blacklist'
   editingDishId: null,
-  filters: {
-    excludeSpicy: false,
-    excludeNoodles: false,
-    excludeRecent: false,
-    excludeBlacklisted: true,
-  },
+  filters: { ...DEFAULT_FILTERS },
 };
 
 let isSpinning = false;
@@ -1822,7 +1851,8 @@ function initState() {
   const saved = loadData();
   if (saved && saved.dishes && saved.dishes.length > 0) {
     state = saved;
-    state.filters = { ...FILTERS.reduce((acc, f) => ({ ...acc, [f.key]: false }), {}), ...state.filters };
+    // 合并默认值：旧数据中缺少的新 filter 字段会自动补齐
+    state.filters = { ...DEFAULT_FILTERS, ...state.filters };
     if (saved.soundEnabled !== undefined) {
       soundEnabled = saved.soundEnabled;
     }
@@ -1877,7 +1907,10 @@ function renderFilterBar() {
     <button class="filter-bar__chip${state.filters[f.key] ? ' filter-bar__chip--active' : ''}"
             data-filter="${f.key}">${f.label}</button>
   `).join('');
+}
 
+function initFilterBarEvents() {
+  const container = document.getElementById('filterBar');
   container.addEventListener('click', e => {
     const chip = e.target.closest('[data-filter]');
     if (!chip) return;
@@ -1885,6 +1918,7 @@ function renderFilterBar() {
     state.filters[key] = !state.filters[key];
     saveData(state);
     renderFilterBar();
+    renderWheel();
   });
 }
 
@@ -1909,17 +1943,17 @@ function renderWheel() {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // 空状态居中显示，中心按钮隐藏后不再遮挡
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = '28px sans-serif';
+    // 空状态居中显示，中心按钮隐藏后不再遮挡；使用深色文字保证在浅色背景上可读
+    const emptyTextColor = 'rgba(44, 24, 16, 0.78)';
+    const emptySubTextColor = 'rgba(44, 24, 16, 0.52)';
+    ctx.fillStyle = emptyTextColor;
+    ctx.font = 'bold 14px var(--font-sans)';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('🍽️', WHEEL_CENTER, WHEEL_CENTER - 40);
-    ctx.font = 'bold 14px sans-serif';
-    ctx.fillText('暂无菜品', WHEEL_CENTER, WHEEL_CENTER - 8);
-    ctx.font = '12px sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.fillText('点击下方按钮添加', WHEEL_CENTER, WHEEL_CENTER + 16);
+    ctx.fillText('暂无可选菜品', WHEEL_CENTER, WHEEL_CENTER - 12);
+    ctx.font = '12px var(--font-sans)';
+    ctx.fillStyle = emptySubTextColor;
+    ctx.fillText('点击下方“菜品管理”添加', WHEEL_CENTER, WHEEL_CENTER + 14);
     return;
   }
 
@@ -2020,6 +2054,13 @@ function spinWheel() {
   requestAnimationFrame(animate);
 }
 
+function updateShareButtonState() {
+  const shareBtn = document.getElementById('shareBtn');
+  shareBtn.disabled = !currentResult;
+  shareBtn.style.opacity = currentResult ? '1' : '0.5';
+  shareBtn.style.cursor = currentResult ? 'pointer' : 'not-allowed';
+}
+
 function showResult(text, emoji) {
   const resultCard = document.getElementById('resultCard');
   const resultEmoji = document.getElementById('resultEmoji');
@@ -2030,6 +2071,7 @@ function showResult(text, emoji) {
   resultEmoji.textContent = emoji || FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)];
   resultCard.classList.add('result__card--visible');
   resultActions.classList.add('result__actions--visible');
+  updateShareButtonState();
 }
 
 function hideResult() {
@@ -2038,6 +2080,7 @@ function hideResult() {
   resultCard.classList.remove('result__card--visible');
   resultActions.classList.remove('result__actions--visible');
   currentResult = null;
+  updateShareButtonState();
 }
 
 function resetDishes() {
@@ -2067,11 +2110,16 @@ function openModal(addedDishId) {
   if (searchInput) searchInput.value = '';
   renderFilterButtons();
   renderDishList(addedDishId);
+}
 
-  // 搜索输入
+function initModalEvents() {
+  // 搜索输入（带防抖）
+  const searchInput = document.getElementById('dishSearch');
+  let searchTimeout = null;
   searchInput.addEventListener('input', e => {
     state.dishSearchQuery = e.target.value.trim();
-    renderDishList();
+    if (searchTimeout) clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => renderDishList(), 200);
   });
 
   // 分类筛选
@@ -2126,6 +2174,7 @@ function renderDishList(highlightId) {
           </span>
           <span class="dish-list__scenes">${dish.scenes.join(' · ')}</span>
           <span class="dish-list__weight">权重 ${dish.weight}</span>
+          ${dish.lastEaten ? `<span class="dish-list__last-eaten">${formatLastEaten(dish.lastEaten)}</span>` : ''}
         </div>
       </div>
       <div class="dish-list__actions">
@@ -2137,11 +2186,16 @@ function renderDishList(highlightId) {
     </li>
   `).join('');
 
-  // 新增菜品后自动滚动到该条目并高亮
+  // 新增菜品后自动滚动到该条目并高亮；同一道菜重复高亮时先移除 class 再添加，确保动画重新触发
   if (highlightId) {
     requestAnimationFrame(() => {
       const el = list.querySelector(`[data-id="${highlightId}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.remove('dish-list__item--highlighted');
+        void el.offsetWidth; // 强制重排以重置 CSS 动画
+        el.classList.add('dish-list__item--highlighted');
+      }
     });
   }
 }
@@ -2190,7 +2244,8 @@ function startEditDish(dishId) {
   state.editingDishId = dishId;
   el.classList.add('dish-list__item--editing');
 
-  const sceneLabels = ['早餐', '午餐', '晚餐', '夜宵'];
+  // 编辑可选场景直接复用全局 SCENES，保持单一数据源
+  const editableScenes = SCENES.filter(s => s !== '不限');
   el.innerHTML = `
     <div class="dish-edit-form">
       <div class="dish-edit-form__row">
@@ -2204,7 +2259,7 @@ function startEditDish(dishId) {
       <div class="dish-edit-form__row">
         <span class="dish-edit-form__label">场景</span>
         <div class="dish-edit-form__scenes" id="editScenes_${dishId}">
-          ${sceneLabels.map(s => `
+          ${editableScenes.map(s => `
             <span class="dish-edit-form__scene-chip${dish.scenes.includes(s) ? ' dish-edit-form__scene-chip--active' : ''}" data-scene="${s}">${s}</span>
           `).join('')}
         </div>
@@ -2407,8 +2462,10 @@ initState();
 renderSceneBar();
 initSceneBarEvents();
 renderFilterBar();
+initFilterBarEvents();
 renderWheel();
 bindEvents();
+initModalEvents();
 createBgDecoration();
 </script>
 </body>
