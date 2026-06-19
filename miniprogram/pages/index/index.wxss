@@ -3,8 +3,6 @@
   z-index: 2;
   width: 100%;
   max-width: 520rpx;
-  height: 100vh;
-  height: 100dvh;
   margin: 0 auto;
   padding: 12rpx 20rpx 4rpx;
   display: flex;

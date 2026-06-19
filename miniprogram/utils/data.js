@@ -66,9 +66,7 @@ const PRESET_DISHES = [
 ];
 
 function generateId() {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
+  // 小程序环境中没有 crypto.randomUUID，统一使用时间戳+随机数
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
