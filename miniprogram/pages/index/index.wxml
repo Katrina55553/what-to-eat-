@@ -1,0 +1,63 @@
+<view class="app">
+  <view class="bg-decoration" id="bgDecoration">
+    <view wx:for="{{bgItems}}" wx:key="index" class="bg-decoration__item" style="left: {{item.left}}%; font-size: {{item.fontSize}}rpx; animation-duration: {{item.duration}}s; animation-delay: {{item.delay}}s;">{{item.emoji}}</view>
+  </view>
+
+  <view class="main-card">
+    <view class="header">
+      <view class="header__logo">🍜</view>
+      <text class="header__title">今天吃什么</text>
+      <text class="header__subtitle">让转盘为你决定 · LET THE WHEEL DECIDE</text>
+    </view>
+
+    <view class="badge" id="sceneBadge">
+      <text class="badge__icon">{{badgeIcon}}</text>
+      <text class="badge__text">当前场景：{{currentScene}}</text>
+    </view>
+
+    <view class="scene-bar" id="sceneBar">
+      <button wx:for="{{scenes}}" wx:key="*this" class="scene-bar__btn {{item === currentScene ? 'scene-bar__btn--active' : ''}}" data-scene="{{item}}" bindtap="onSceneTap">
+        <text class="scene-bar__icon">{{sceneIcons[item]}}</text>
+        <text>{{item}}</text>
+      </button>
+    </view>
+
+    <view class="filter-bar" id="filterBar">
+      <button wx:for="{{filtersList}}" wx:key="key" class="filter-bar__chip {{filters[item.key] ? 'filter-bar__chip--active' : ''}}" data-filter="{{item.key}}" bindtap="onFilterTap">{{item.label}}</button>
+    </view>
+
+    <view class="wheel-section">
+      <view class="wheel-glow"></view>
+      <view class="wheel-container {{isSpinning ? 'wheel-container--spinning' : ''}}" id="wheelContainer">
+        <view class="wheel-ring"></view>
+        <view class="wheel-container__pointer"></view>
+        <canvas class="wheel-container__canvas" id="wheelCanvas" type="2d" style="width: 250px; height: 250px;"></canvas>
+        <button class="wheel-container__center" id="wheelCenter" type="default" aria-label="开始抽选" disabled="{{wheelDisabled || isSpinning}}" bindtap="spinWheel">
+          <text class="wheel-container__center-icon">🎯</text>
+          <text class="wheel-container__center-text">GO</text>
+        </button>
+      </view>
+    </view>
+
+    <view class="actions">
+      <button class="actions__btn actions__btn--spin" id="spinBtn" disabled="{{isSpinning || wheelDisabled}}" bindtap="spinWheel">开始抽选</button>
+    </view>
+
+    <view class="result" id="resultArea">
+      <view class="result__card {{showResultCard ? 'result__card--visible' : ''}}" id="resultCard">
+        <view class="result__emoji" id="resultEmoji">{{resultEmoji}}</view>
+        <view class="result__text" id="resultText">{{resultText}}</view>
+      </view>
+      <view class="result__actions {{showResultActions ? 'result__actions--visible' : ''}}" id="resultActions">
+        <button class="actions__btn actions__btn--secondary" id="respinBtn" bindtap="spinWheel">再抽一次</button>
+        <button class="actions__btn actions__btn--spin" id="confirmBtn" bindtap="confirmChoice">就选这个</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="toolbar">
+    <button class="toolbar__btn" id="manageBtn" bindtap="goToManage">菜品管理</button>
+    <button class="toolbar__btn" id="soundBtn" bindtap="toggleSound">{{soundEnabled ? '音效开' : '音效关'}}</button>
+    <button class="toolbar__btn" id="shareBtn" disabled="{{!currentResult}}" bindtap="shareResult" open-type="share">分享</button>
+  </view>
+</view>

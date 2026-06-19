@@ -1,0 +1,40 @@
+/* 全局样式变量与基础重置 */
+page {
+  --ink: #2c1810;
+  --ink-soft: #6b5540;
+  --ink-faint: #9a8770;
+  --paper: #f5ede0;
+  --paper-deep: #ece0cc;
+  --paper-warm: #fdf8ec;
+  --terracotta: #c9403d;
+  --terracotta-deep: #a8322f;
+  --terracotta-light: #e86562;
+  --amber: #f5c77e;
+  --amber-deep: #e0a85f;
+  --sage: #5f7a6f;
+  --sage-deep: #4a6359;
+  --ochre: #d68a3c;
+  --cream: #faf3e0;
+  --gold: #c9a14a;
+  --radius-sm: 10rpx;
+  --radius: 14rpx;
+  --radius-lg: 22rpx;
+  --radius-xl: 30rpx;
+  --font-serif: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  font-family: var(--font-sans);
+  background:
+    radial-gradient(ellipse 80% 50% at 15% 0%, rgba(245, 199, 126, 0.5) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 40% at 85% 100%, rgba(201, 64, 61, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 50%, rgba(95, 122, 111, 0.06) 0%, transparent 70%),
+    linear-gradient(165deg, #faf3e0 0%, #f5ede0 50%, #ece0cc 100%);
+  color: var(--ink);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}

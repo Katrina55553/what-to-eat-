@@ -1,0 +1,76 @@
+<view class="manage">
+  <view class="manage__header">
+    <text class="manage__title">菜品管理</text>
+    <button class="manage__reset" bindtap="resetDishes">↻ 重置</button>
+  </view>
+
+  <view class="add-form">
+    <input class="add-form__input" value="{{inputValue}}" bindinput="onInputChange" bindconfirm="addDish" placeholder="输入菜品名称，回车添加" maxlength="20" />
+    <button class="add-form__btn" bindtap="addDish">添加</button>
+  </view>
+
+  <view class="dish-search">
+    <input class="dish-search__input" value="{{searchValue}}" bindinput="onSearchInput" placeholder="搜索菜品…" maxlength="20" />
+    <button wx:for="{{searchFilters}}" wx:key="key" class="dish-search__filter {{item.key === searchFilter ? 'dish-search__filter--active' : ''}} {{item.key === 'blacklist' ? 'dish-search__filter--blacklist' : ''}}" data-filter="{{item.key}}" bindtap="onSearchFilterTap">{{item.label}}</button>
+  </view>
+
+  <view class="dish-list__count">{{countText}}</view>
+
+  <scroll-view class="dish-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <block wx:if="{{filteredDishes.length === 0}}">
+      <view class="empty-state">
+        <view class="empty-state__icon">{{searchValue ? '🔍' : '🍽️'}}</view>
+        <view class="empty-state__text">{{searchValue ? '没有找到匹配的菜品' : '还没有菜品，快去添加吧！'}}</view>
+      </view>
+    </block>
+
+    <block wx:for="{{filteredDishes}}" wx:key="id">
+      <view class="dish-list__item {{item.isBlacklisted ? 'dish-list__item--blacklisted' : ''}} {{item.id === highlightId ? 'dish-list__item--highlighted' : ''}}" data-id="{{item.id}}">
+        <block wx:if="{{editingId === item.id}}">
+          <view class="dish-edit-form">
+            <view class="dish-edit-form__row">
+              <text class="dish-edit-form__label">名称</text>
+              <input class="dish-edit-form__input" data-field="name" value="{{editForm.name}}" maxlength="20" />
+            </view>
+            <view class="dish-edit-form__row">
+              <text class="dish-edit-form__label">标签</text>
+              <input class="dish-edit-form__input" data-field="tags" value="{{editForm.tags}}" placeholder="用逗号或顿号分隔" maxlength="30" />
+            </view>
+            <view class="dish-edit-form__row">
+              <text class="dish-edit-form__label">场景</text>
+              <view class="dish-edit-form__scenes">
+                <text wx:for="{{editableScenes}}" wx:key="*this" wx:for-item="s" class="dish-edit-form__scene-chip {{editForm.scenes.includes(s) ? 'dish-edit-form__scene-chip--active' : ''}}" data-scene="{{s}}" bindtap="toggleEditScene">{{s}}</text>
+              </view>
+            </view>
+            <view class="dish-edit-form__row">
+              <text class="dish-edit-form__label">权重</text>
+              <input class="dish-edit-form__input" data-field="weight" type="number" value="{{editForm.weight}}" min="1" max="10" style="width:70px;flex:none;" />
+            </view>
+            <view class="dish-edit-form__actions">
+              <button class="dish-edit-form__btn dish-edit-form__btn--cancel" data-id="{{item.id}}" bindtap="cancelEdit">取消</button>
+              <button class="dish-edit-form__btn dish-edit-form__btn--save" data-id="{{item.id}}" bindtap="saveEdit">保存</button>
+            </view>
+          </view>
+        </block>
+        <block wx:else>
+          <view class="dish-list__info">
+            <text class="dish-list__name">{{item.isBlacklisted ? '' : ''}}{{item.name}}{{item.isBlacklisted ? '' : ''}}</text>
+            <view class="dish-list__meta">
+              <view class="dish-list__tags">
+                <text wx:for="{{item.tags}}" wx:key="*this" wx:for-item="t" class="dish-list__tag">{{t}}</text>
+              </view>
+              <text class="dish-list__scenes">{{item.scenes.join(' · ')}}</text>
+              <text class="dish-list__weight">权重 {{item.weight}}</text>
+              <text wx:if="{{item.lastEaten}}" class="dish-list__last-eaten">{{formatLastEaten(item.lastEaten)}}</text>
+            </view>
+          </view>
+          <view class="dish-list__actions">
+            <button class="dish-list__blacklist {{item.isBlacklisted ? 'dish-list__blacklist--active' : ''}}" data-id="{{item.id}}" bindtap="toggleBlacklist">💣</button>
+            <button class="dish-list__edit" data-id="{{item.id}}" bindtap="startEdit">✎</button>
+            <button class="dish-list__delete" data-id="{{item.id}}" bindtap="deleteDish">×</button>
+          </view>
+        </block>
+      </view>
+    </block>
+  </scroll-view>
+</view>
