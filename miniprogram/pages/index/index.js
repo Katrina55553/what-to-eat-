@@ -2,9 +2,6 @@ const {
   SCENES,
   SCENE_ICONS,
   FILTERS,
-  WHEEL_SIZE,
-  WHEEL_CENTER,
-  WHEEL_RADIUS,
   SPIN_DURATION,
   MIN_ROTATIONS,
   FOOD_EMOJIS,
@@ -15,6 +12,11 @@ const {
   weightedRandom,
   createBgItems,
 } = require('../../utils/data.js');
+
+// Canvas 逻辑尺寸（px），需与 CSS 中 canvas 的实际像素尺寸一致
+const CANVAS_SIZE = 250;
+const CANVAS_CENTER = CANVAS_SIZE / 2;
+const CANVAS_RADIUS = CANVAS_CENTER - 8;
 
 Page({
   data: {
@@ -34,6 +36,7 @@ Page({
     resultText: '',
     resultEmoji: '',
     currentResult: null,
+    wheelRotation: 0,
   },
 
   onLoad() {
@@ -45,16 +48,13 @@ Page({
       soundEnabled: initial.soundEnabled,
       badgeIcon: this.getBadgeIcon(initial.currentScene),
     });
-    this.renderWheel();
   },
 
   onReady() {
-    // 页面首次渲染完成后初始化 canvas 上下文
     this.initCanvas();
   },
 
   onShow() {
-    // 从菜品管理页返回时，重新读取最新数据
     const initial = getInitialState();
     this.setData({
       dishes: initial.dishes,
@@ -63,7 +63,7 @@ Page({
       soundEnabled: initial.soundEnabled,
       badgeIcon: this.getBadgeIcon(initial.currentScene),
     });
-    this.renderWheel();
+    if (this.ctx) this.renderWheel();
   },
 
   onShareAppMessage() {
@@ -84,17 +84,24 @@ Page({
   },
 
   initCanvas() {
-    const query = wx.createSelectorQuery();
+    if (this.canvasInitRetry > 10) return;
+    this.canvasInitRetry = (this.canvasInitRetry || 0) + 1;
+
+    const query = this.createSelectorQuery();
     query.select('#wheelCanvas').fields({ node: true, size: true }).exec((res) => {
-      if (!res[0]) return;
+      if (!res || !res[0] || !res[0].node) {
+        setTimeout(() => this.initCanvas(), 300);
+        return;
+      }
       const canvas = res[0].node;
       const ctx = canvas.getContext('2d');
       const dpr = wx.getSystemInfoSync().pixelRatio;
-      canvas.width = WHEEL_SIZE * dpr;
-      canvas.height = WHEEL_SIZE * dpr;
+      canvas.width = CANVAS_SIZE * dpr;
+      canvas.height = CANVAS_SIZE * dpr;
       ctx.scale(dpr, dpr);
       this.canvas = canvas;
       this.ctx = ctx;
+      this.canvasInitRetry = 0;
       this.renderWheel();
     });
   },
@@ -105,11 +112,11 @@ Page({
     const dishes = filterDishes(this.data.dishes, this.data.currentScene, this.data.filters);
 
     this.setData({ wheelDisabled: dishes.length === 0 });
-    ctx.clearRect(0, 0, WHEEL_SIZE, WHEEL_SIZE);
+    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     if (dishes.length === 0) {
       ctx.beginPath();
-      ctx.arc(WHEEL_CENTER, WHEEL_CENTER, WHEEL_RADIUS, 0, Math.PI * 2);
+      ctx.arc(CANVAS_CENTER, CANVAS_CENTER, CANVAS_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = 'rgba(253, 248, 236, 0.6)';
       ctx.fill();
       ctx.strokeStyle = 'rgba(201, 64, 61, 0.2)';
@@ -122,10 +129,10 @@ Page({
       ctx.font = 'bold 14px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('暂无可选菜品', WHEEL_CENTER, WHEEL_CENTER - 12);
+      ctx.fillText('暂无可选菜品', CANVAS_CENTER, CANVAS_CENTER - 12);
       ctx.font = '12px sans-serif';
       ctx.fillStyle = 'rgba(44, 24, 16, 0.52)';
-      ctx.fillText('点击下方“菜品管理”添加', WHEEL_CENTER, WHEEL_CENTER + 14);
+      ctx.fillText('点击下方菜品管理添加', CANVAS_CENTER, CANVAS_CENTER + 14);
       return;
     }
 
@@ -135,8 +142,8 @@ Page({
       const endAngle = startAngle + sliceAngle;
 
       ctx.beginPath();
-      ctx.moveTo(WHEEL_CENTER, WHEEL_CENTER);
-      ctx.arc(WHEEL_CENTER, WHEEL_CENTER, WHEEL_RADIUS, startAngle, endAngle);
+      ctx.moveTo(CANVAS_CENTER, CANVAS_CENTER);
+      ctx.arc(CANVAS_CENTER, CANVAS_CENTER, CANVAS_RADIUS, startAngle, endAngle);
       ctx.closePath();
       ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
       ctx.fill();
@@ -145,14 +152,14 @@ Page({
       ctx.stroke();
 
       ctx.save();
-      ctx.translate(WHEEL_CENTER, WHEEL_CENTER);
+      ctx.translate(CANVAS_CENTER, CANVAS_CENTER);
       ctx.rotate(startAngle + sliceAngle / 2);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#fff';
       ctx.shadowColor = 'rgba(0,0,0,0.3)';
       ctx.shadowBlur = 4;
-      const textRadius = WHEEL_RADIUS * 0.65;
+      const textRadius = CANVAS_RADIUS * 0.65;
       const fontSize = Math.max(8, Math.min(13, Math.round(104 / dishes.length)));
       ctx.font = `bold ${fontSize}px sans-serif`;
       const maxLen = Math.max(3, Math.round(7 - (dishes.length - 6) * 0.4));
@@ -198,46 +205,44 @@ Page({
     const sliceAngle = 360 / dishes.length;
     const targetSliceCenter = selectedIndex * sliceAngle + sliceAngle / 2;
     const extraRotations = MIN_ROTATIONS * 360;
+    const startRotation = this.data.wheelRotation;
     const targetAngle = extraRotations + (360 - targetSliceCenter);
+    const finalRotation = startRotation + targetAngle;
 
-    const startTime = performance.now();
+    const startTime = Date.now();
     let lastTickIndex = -1;
 
-    const animate = (now) => {
-      const elapsed = now - startTime;
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / SPIN_DURATION, 1);
       const eased = 1 - Math.pow(1 - progress, 4);
-      const currentAngle = eased * targetAngle;
+      const currentRotation = startRotation + eased * targetAngle;
 
-      if (this.canvas) {
-        this.canvas.style.transform = `rotate(${currentAngle}deg)`;
-      }
+      this.setData({ wheelRotation: currentRotation });
 
-      const tickIndex = Math.floor((currentAngle % 360) / sliceAngle);
+      const tickIndex = Math.floor((currentRotation % 360) / sliceAngle);
       if (tickIndex !== lastTickIndex) {
         lastTickIndex = tickIndex;
         this.playTickSound();
       }
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        setTimeout(animate, 16);
       } else {
-        if (this.canvas) {
-          this.canvas.style.transform = `rotate(${currentAngle % 360}deg)`;
-        }
-        this.setData({ isSpinning: false });
+        this.setData({
+          isSpinning: false,
+          wheelRotation: finalRotation % 360,
+        });
         this.showResult(`今天吃 ${selected.name}！`);
         this.playResultSound();
       }
     };
 
-    requestAnimationFrame(animate);
+    animate();
   },
 
   playTickSound() {
     if (!this.data.soundEnabled) return;
-    // 小程序中可使用 wx.createInnerAudioContext 播放 tick 音效
-    // 此处用轻量震动作为反馈，避免首次点击需要用户交互解锁音频的问题
     wx.vibrateShort({ type: 'light' });
   },
 
@@ -299,7 +304,6 @@ Page({
     if (!this.data.currentResult) {
       wx.showToast({ title: '还没有抽选结果哦', icon: 'none' });
     }
-    // 实际分享由 open-type="share" 触发 onShareAppMessage
   },
 
   persistState() {

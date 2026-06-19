@@ -13,6 +13,15 @@ const SEARCH_FILTERS = [
   { key: 'blacklist', label: '踩雷' },
 ];
 
+// 给菜品加上展示用的预计算字段，避免在 wxml 中调用函数
+function decorateDish(dish) {
+  return {
+    ...dish,
+    scenesText: dish.scenes.join(' · '),
+    lastEatenText: dish.lastEaten ? formatLastEaten(dish.lastEaten) : '',
+  };
+}
+
 Page({
   data: {
     dishes: [],
@@ -41,7 +50,8 @@ Page({
 
   loadState() {
     const state = getInitialState();
-    this.setData({ dishes: state.dishes }, () => {
+    const dishes = state.dishes.map(decorateDish);
+    this.setData({ dishes }, () => {
       this.applyFilters();
     });
   },
@@ -70,7 +80,7 @@ Page({
       return;
     }
 
-    const newDish = {
+    const newDish = decorateDish({
       id: generateId(),
       name,
       tags: ['自定义'],
@@ -79,7 +89,7 @@ Page({
       lastEaten: null,
       isBlacklisted: false,
       isCustom: true,
-    };
+    });
 
     const dishes = [...this.data.dishes, newDish];
     this.persistAndReload(dishes, newDish.id);
@@ -102,7 +112,7 @@ Page({
     const id = e.currentTarget.dataset.id;
     const dishes = this.data.dishes.map(d => {
       if (d.id !== id) return d;
-      return { ...d, isBlacklisted: !d.isBlacklisted, weight: d.isBlacklisted ? 5 : 1 };
+      return decorateDish({ ...d, isBlacklisted: !d.isBlacklisted, weight: d.isBlacklisted ? 5 : 1 });
     });
     this.persistAndReload(dishes);
   },
@@ -132,9 +142,15 @@ Page({
         name: dish.name,
         tags: dish.tags.join('、'),
         scenes: [...dish.scenes],
-        weight: dish.weight,
+        weight: String(dish.weight),
       },
     });
+  },
+
+  // 编辑表单输入同步
+  onEditInput(e) {
+    const field = e.currentTarget.dataset.field;
+    this.setData({ [`editForm.${field}`]: e.detail.value });
   },
 
   toggleEditScene(e) {
@@ -151,7 +167,6 @@ Page({
 
   saveEdit(e) {
     const id = e.currentTarget.dataset.id;
-    // 从小程序 input 的 value 需要通过 data 拿到，这里简化直接从 editForm 读取
     const form = this.data.editForm;
     const name = (form.name || '').trim();
     if (!name) {
@@ -163,13 +178,13 @@ Page({
       return;
     }
 
-    const tags = form.tags.split(/[,，、]/).map(t => t.trim()).filter(Boolean);
+    const tags = (form.tags || '').split(/[,，、]/).map(t => t.trim()).filter(Boolean);
     const weight = Math.max(1, Math.min(10, parseInt(form.weight) || 5));
     const scenes = form.scenes.length > 0 ? form.scenes : ['午餐', '晚餐'];
 
     const dishes = this.data.dishes.map(d => {
       if (d.id !== id) return d;
-      return { ...d, name, tags: tags.length > 0 ? tags : ['自定义'], scenes, weight };
+      return decorateDish({ ...d, name, tags: tags.length > 0 ? tags : ['自定义'], scenes, weight });
     });
 
     this.persistAndReload(dishes, id);
@@ -182,7 +197,7 @@ Page({
       content: '确定要重置所有菜品吗？自定义菜品将被清除，恢复预置菜品。',
       success: (res) => {
         if (res.confirm) {
-          const dishes = PRESET_DISHES.map(d => ({
+          const dishes = PRESET_DISHES.map(d => decorateDish({
             id: generateId(),
             name: d.name,
             tags: d.tags,
@@ -201,14 +216,14 @@ Page({
 
   persistAndReload(dishes, highlightId) {
     const state = getInitialState();
-    state.dishes = dishes;
+    state.dishes = dishes.map(d => {
+      // 存储时去掉展示用的预计算字段
+      const { scenesText, lastEatenText, ...rest } = d;
+      return rest;
+    });
     saveData(state);
     this.setData({ dishes, highlightId: highlightId || null }, () => {
       this.applyFilters();
     });
-  },
-
-  formatLastEaten(timestamp) {
-    return formatLastEaten(timestamp);
   },
 });

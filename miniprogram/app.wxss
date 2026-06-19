@@ -35,6 +35,11 @@ page {
   overflow: hidden;
 }
 
-* {
+view,
+text,
+input,
+button,
+scroll-view,
+canvas {
   box-sizing: border-box;
 }
