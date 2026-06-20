@@ -51,9 +51,8 @@ Page({
   },
 
   onReady() {
-    // 旧版 Canvas API，无需 createSelectorQuery，不会超时
-    this.ctx = wx.createCanvasContext('wheelCanvas', this);
-    this.renderWheel();
+    // 延迟确保 canvas 节点渲染完毕
+    setTimeout(() => this.initCanvas(), 100);
   },
 
   onShow() {
@@ -85,36 +84,55 @@ Page({
     return scene === '不限' ? '🍽️' : (SCENE_ICONS[scene] || '🍽️');
   },
 
+  initCanvas() {
+    // 不带 .in(this)，全局查询
+    wx.createSelectorQuery()
+      .select('#wheelCanvas')
+      .fields({ node: true, size: true })
+      .exec((res) => {
+        if (!res || !res[0] || !res[0].node) {
+          setTimeout(() => this.initCanvas(), 300);
+          return;
+        }
+        const canvas = res[0].node;
+        const ctx = canvas.getContext('2d');
+        const dpr = wx.getWindowInfo ? wx.getWindowInfo().pixelRatio : 2;
+        canvas.width = CANVAS_SIZE * dpr;
+        canvas.height = CANVAS_SIZE * dpr;
+        ctx.scale(dpr, dpr);
+        this.canvas = canvas;
+        this.ctx = ctx;
+        this.renderWheel();
+      });
+  },
+
   renderWheel() {
     if (!this.ctx) return;
     const ctx = this.ctx;
     const dishes = filterDishes(this.data.dishes, this.data.currentScene, this.data.filters);
 
     this.setData({ wheelDisabled: dishes.length === 0 });
-
-    // 旧版 Canvas 用 clearRect 前需要先清空路径队列
-    ctx.clearActions();
+    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     if (dishes.length === 0) {
       ctx.beginPath();
       ctx.arc(CANVAS_CENTER, CANVAS_CENTER, CANVAS_RADIUS, 0, Math.PI * 2);
-      ctx.setFillStyle('rgba(253, 248, 236, 0.6)');
+      ctx.fillStyle = 'rgba(253, 248, 236, 0.6)';
       ctx.fill();
-      ctx.setStrokeStyle('rgba(201, 64, 61, 0.2)');
-      ctx.setLineWidth(2);
-      ctx.setLineDash([6, 6], 0);
+      ctx.strokeStyle = 'rgba(201, 64, 61, 0.2)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 6]);
       ctx.stroke();
-      ctx.setLineDash([], 0);
+      ctx.setLineDash([]);
 
-      ctx.setFillStyle('rgba(44, 24, 16, 0.78)');
-      ctx.setFontSize(14);
-      ctx.setTextAlign('center');
-      ctx.setTextBaseline('middle');
+      ctx.fillStyle = 'rgba(44, 24, 16, 0.78)';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText('暂无可选菜品', CANVAS_CENTER, CANVAS_CENTER - 12);
-      ctx.setFontSize(12);
-      ctx.setFillStyle('rgba(44, 24, 16, 0.52)');
+      ctx.font = '12px sans-serif';
+      ctx.fillStyle = 'rgba(44, 24, 16, 0.52)';
       ctx.fillText('点击下方菜品管理添加', CANVAS_CENTER, CANVAS_CENTER + 14);
-      ctx.draw();
       return;
     }
 
@@ -127,29 +145,28 @@ Page({
       ctx.moveTo(CANVAS_CENTER, CANVAS_CENTER);
       ctx.arc(CANVAS_CENTER, CANVAS_CENTER, CANVAS_RADIUS, startAngle, endAngle);
       ctx.closePath();
-      ctx.setFillStyle(WHEEL_COLORS[i % WHEEL_COLORS.length]);
+      ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
       ctx.fill();
-      ctx.setStrokeStyle('rgba(255,255,255,0.8)');
-      ctx.setLineWidth(2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 2;
       ctx.stroke();
 
       ctx.save();
       ctx.translate(CANVAS_CENTER, CANVAS_CENTER);
       ctx.rotate(startAngle + sliceAngle / 2);
-      ctx.setTextAlign('center');
-      ctx.setTextBaseline('middle');
-      ctx.setFillStyle('#fff');
-      ctx.setShadow(0, 0, 4, 'rgba(0,0,0,0.3)');
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 4;
       const textRadius = CANVAS_RADIUS * 0.65;
       const fontSize = Math.max(8, Math.min(13, Math.round(104 / dishes.length)));
-      ctx.setFontSize(fontSize);
+      ctx.font = `bold ${fontSize}px sans-serif`;
       const maxLen = Math.max(3, Math.round(7 - (dishes.length - 6) * 0.4));
       const displayName = dish.name.length > maxLen ? dish.name.slice(0, maxLen) + '…' : dish.name;
       ctx.fillText(displayName, textRadius, 0);
       ctx.restore();
     });
-
-    ctx.draw();
   },
 
   onSceneTap(e) {
