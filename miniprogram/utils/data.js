@@ -17,7 +17,7 @@ const FILTERS = [
   { key: 'excludeBlacklisted', label: '💣 避开踩雷' },
 ];
 
-const DEFAULT_FILTERS = FILTERS.reduce((acc, f) => ({ ...acc, [f.key]: false }), {});
+const DEFAULT_FILTERS = FILTERS.reduce((acc, f) => Object.assign({}, acc, { [f.key]: false }), {});
 DEFAULT_FILTERS.excludeBlacklisted = true;
 
 const WHEEL_SIZE = 250;
@@ -101,7 +101,7 @@ function createDefaultState() {
       isCustom: false,
     })),
     currentScene: '不限',
-    filters: { ...DEFAULT_FILTERS },
+    filters: Object.assign({}, DEFAULT_FILTERS),
     soundEnabled: true,
   };
 }
@@ -109,7 +109,7 @@ function createDefaultState() {
 function getInitialState() {
   const saved = loadData();
   if (saved && saved.dishes && saved.dishes.length > 0) {
-    saved.filters = { ...DEFAULT_FILTERS, ...saved.filters };
+    saved.filters = Object.assign({}, DEFAULT_FILTERS, saved.filters);
     return saved;
   }
   const initial = createDefaultState();

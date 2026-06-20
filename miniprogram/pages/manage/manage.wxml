@@ -1,7 +1,10 @@
 <view class="manage">
   <view class="manage__header">
     <text class="manage__title">菜品管理</text>
-    <button class="manage__reset" bindtap="resetDishes">↻ 重置</button>
+    <view class="manage__actions">
+      <button class="manage__clear" bindtap="clearDishes">清空</button>
+      <button class="manage__reset" bindtap="resetDishes">↻ 重置</button>
+    </view>
   </view>
 
   <view class="add-form">

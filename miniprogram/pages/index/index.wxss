@@ -233,15 +233,23 @@
   50% { opacity: 0.85; transform: translate(-50%, -50%) scale(1.06); }
 }
 
-.wheel-container {
+.wheel-wrapper {
   position: relative;
   width: 500rpx;
   height: 500rpx;
+}
+
+.wheel-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
 }
 
 .wheel-container--spinning {
-  transform: scale(0.98);
+  opacity: 0.98;
 }
 
 .wheel-ring {
@@ -293,11 +301,53 @@
 }
 
 .wheel-container__canvas {
-  display: block;
-  width: 500rpx;
-  height: 500rpx;
+  display: none;
+}
+
+.wheel-empty {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
-  box-shadow: 0 0 0 10rpx #fdf8ec, 0 0 0 12rpx rgba(201, 64, 61, 0.12), 0 22rpx 50rpx rgba(201, 64, 61, 0.28);
+  background: rgba(253, 248, 236, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  border: 2rpx dashed rgba(201, 64, 61, 0.2);
+}
+
+.wheel-empty__title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: rgba(44, 24, 16, 0.78);
+  letter-spacing: 2rpx;
+}
+
+.wheel-empty__sub {
+  font-size: 22rpx;
+  color: rgba(44, 24, 16, 0.52);
+}
+
+.wheel-segment {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.wheel-segment__text {
+  position: absolute;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .wheel-container__center {

@@ -13,11 +13,6 @@ const {
   createBgItems,
 } = require('../../utils/data.js');
 
-// Canvas 逻辑尺寸
-const CANVAS_SIZE = 250;
-const CANVAS_CENTER = CANVAS_SIZE / 2;
-const CANVAS_RADIUS = CANVAS_CENTER - 8;
-
 Page({
   data: {
     scenes: SCENES,
@@ -31,6 +26,7 @@ Page({
     badgeIcon: '🍽️',
     wheelDisabled: false,
     isSpinning: false,
+    wheelSegments: [],
     showResultCard: false,
     showResultActions: false,
     resultText: '',
@@ -48,11 +44,12 @@ Page({
       soundEnabled: initial.soundEnabled,
       badgeIcon: this.getBadgeIcon(initial.currentScene),
     });
+    this.computeWheelSegments();
+    this.initAudio();
   },
 
   onReady() {
-    // 延迟确保 canvas 节点渲染完毕
-    setTimeout(() => this.initCanvas(), 100);
+    this.computeWheelSegments();
   },
 
   onShow() {
@@ -64,7 +61,7 @@ Page({
       soundEnabled: initial.soundEnabled,
       badgeIcon: this.getBadgeIcon(initial.currentScene),
     });
-    if (this.ctx) this.renderWheel();
+    this.computeWheelSegments();
   },
 
   onShareAppMessage() {
@@ -80,93 +77,72 @@ Page({
     };
   },
 
+  // 初始化音效播放器
+  initAudio() {
+    this.tickAudio = wx.createInnerAudioContext();
+    this.tickAudio.src = '/audio/tick.wav';
+    this.resultAudio = wx.createInnerAudioContext();
+    this.resultAudio.src = '/audio/result.wav';
+  },
+
+  onUnload() {
+    if (this.tickAudio) this.tickAudio.destroy();
+    if (this.resultAudio) this.resultAudio.destroy();
+  },
+
   getBadgeIcon(scene) {
     return scene === '不限' ? '🍽️' : (SCENE_ICONS[scene] || '🍽️');
   },
 
-  initCanvas() {
-    // 不带 .in(this)，全局查询
-    wx.createSelectorQuery()
-      .select('#wheelCanvas')
-      .fields({ node: true, size: true })
-      .exec((res) => {
-        if (!res || !res[0] || !res[0].node) {
-          setTimeout(() => this.initCanvas(), 300);
-          return;
-        }
-        const canvas = res[0].node;
-        const ctx = canvas.getContext('2d');
-        const dpr = wx.getWindowInfo ? wx.getWindowInfo().pixelRatio : 2;
-        canvas.width = CANVAS_SIZE * dpr;
-        canvas.height = CANVAS_SIZE * dpr;
-        ctx.scale(dpr, dpr);
-        this.canvas = canvas;
-        this.ctx = ctx;
-        this.renderWheel();
-      });
-  },
-
-  renderWheel() {
-    if (!this.ctx) return;
-    const ctx = this.ctx;
+  // 将菜品数据转换为 CSS 转盘色块数组
+  computeWheelSegments() {
     const dishes = filterDishes(this.data.dishes, this.data.currentScene, this.data.filters);
-
     this.setData({ wheelDisabled: dishes.length === 0 });
-    ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     if (dishes.length === 0) {
-      ctx.beginPath();
-      ctx.arc(CANVAS_CENTER, CANVAS_CENTER, CANVAS_RADIUS, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(253, 248, 236, 0.6)';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(201, 64, 61, 0.2)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([6, 6]);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      ctx.fillStyle = 'rgba(44, 24, 16, 0.78)';
-      ctx.font = 'bold 14px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('暂无可选菜品', CANVAS_CENTER, CANVAS_CENTER - 12);
-      ctx.font = '12px sans-serif';
-      ctx.fillStyle = 'rgba(44, 24, 16, 0.52)';
-      ctx.fillText('点击下方菜品管理添加', CANVAS_CENTER, CANVAS_CENTER + 14);
+      this.setData({ wheelSegments: [] });
       return;
     }
 
     const sliceAngle = (Math.PI * 2) / dishes.length;
-    dishes.forEach((dish, i) => {
+    // 文本位置：半径的 65% 处，换算为容器百分比
+    const textRadius = 32.5;
+
+    const segments = dishes.map((dish, i) => {
       const startAngle = i * sliceAngle - Math.PI / 2;
+      const midAngle = startAngle + sliceAngle / 2;
       const endAngle = startAngle + sliceAngle;
 
-      ctx.beginPath();
-      ctx.moveTo(CANVAS_CENTER, CANVAS_CENTER);
-      ctx.arc(CANVAS_CENTER, CANVAS_CENTER, CANVAS_RADIUS, startAngle, endAngle);
-      ctx.closePath();
-      ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      // clip-path polygon 坐标：中心 + 两个端点
+      const cx = 50, cy = 50, r = 50;
+      const x1 = cx + r * Math.cos(startAngle);
+      const y1 = cy + r * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(endAngle);
+      const y2 = cy + r * Math.sin(endAngle);
 
-      ctx.save();
-      ctx.translate(CANVAS_CENTER, CANVAS_CENTER);
-      ctx.rotate(startAngle + sliceAngle / 2);
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#fff';
-      ctx.shadowColor = 'rgba(0,0,0,0.3)';
-      ctx.shadowBlur = 4;
-      const textRadius = CANVAS_RADIUS * 0.65;
-      const fontSize = Math.max(8, Math.min(13, Math.round(104 / dishes.length)));
-      ctx.font = `bold ${fontSize}px sans-serif`;
+      const clipPath = `${cx}% ${cy}%, ${x1}% ${y1}%, ${x2}% ${y2}%`;
+
+      // 文本位置
+      const textX = 50 + textRadius * Math.cos(midAngle);
+      const textY = 50 + textRadius * Math.sin(midAngle);
+      const textAngle = (midAngle * 180) / Math.PI;
+
       const maxLen = Math.max(3, Math.round(7 - (dishes.length - 6) * 0.4));
+      const fontSize = Math.max(16, Math.min(26, Math.round(208 / dishes.length)));
       const displayName = dish.name.length > maxLen ? dish.name.slice(0, maxLen) + '…' : dish.name;
-      ctx.fillText(displayName, textRadius, 0);
-      ctx.restore();
+
+      return {
+        color: WHEEL_COLORS[i % WHEEL_COLORS.length],
+        clipPath,
+        name: displayName,
+        textX,
+        textY,
+        textAngle,
+        fontSize,
+      };
     });
+
+    this.setData({ wheelSegments: segments });
   },
 
   onSceneTap(e) {
@@ -176,16 +152,16 @@ Page({
       badgeIcon: this.getBadgeIcon(scene),
     });
     this.persistState();
-    this.renderWheel();
+    this.computeWheelSegments();
     this.hideResult();
   },
 
   onFilterTap(e) {
     const key = e.currentTarget.dataset.filter;
-    const filters = { ...this.data.filters, [key]: !this.data.filters[key] };
+    const filters = Object.assign({}, this.data.filters, { [key]: !this.data.filters[key] });
     this.setData({ filters });
     this.persistState();
-    this.renderWheel();
+    this.computeWheelSegments();
     this.hideResult();
   },
 
@@ -244,11 +220,18 @@ Page({
   playTickSound() {
     if (!this.data.soundEnabled) return;
     wx.vibrateShort({ type: 'light' });
+    if (this.tickAudio) {
+      this.tickAudio.stop();
+      this.tickAudio.play();
+    }
   },
 
   playResultSound() {
     if (!this.data.soundEnabled) return;
     wx.vibrateShort({ type: 'medium' });
+    if (this.resultAudio) {
+      this.resultAudio.play();
+    }
   },
 
   showResult(text, emoji) {
@@ -287,7 +270,7 @@ Page({
       this.persistState();
     }
     this.hideResult();
-    this.renderWheel();
+    this.computeWheelSegments();
   },
 
   toggleSound() {

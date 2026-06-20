@@ -4,16 +4,16 @@
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  padding: 24rpx;
+  padding: 100rpx 24rpx 24rpx;
 }
 
 .manage__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 20rpx;
+  padding-bottom: 24rpx;
   border-bottom: 1rpx solid rgba(44, 24, 16, 0.05);
-  margin-bottom: 20rpx;
+  margin-bottom: 28rpx;
   flex-shrink: 0;
 }
 
@@ -24,7 +24,13 @@
   letter-spacing: 6rpx;
 }
 
-.manage__reset {
+.manage__actions {
+  display: flex;
+  gap: 12rpx;
+}
+
+.manage__reset,
+.manage__clear {
   width: auto !important;
   min-width: auto !important;
   display: inline-flex !important;
@@ -40,27 +46,39 @@
   margin: 0;
 }
 
-.manage__reset::after {
+.manage__reset::after,
+.manage__clear::after {
   border: none;
+}
+
+.manage__clear {
+  color: var(--terracotta);
+  border-color: rgba(201, 64, 61, 0.25);
 }
 
 /* 添加表单 */
 .add-form {
   display: flex;
   gap: 16rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 28rpx;
   flex-shrink: 0;
 }
 
 .add-form__input {
   flex: 1;
+  height: 84rpx;
+  line-height: 44rpx;
   padding: 20rpx 24rpx;
   border: 2rpx solid rgba(44, 24, 16, 0.1);
   border-radius: var(--radius-sm);
   font-size: 28rpx;
   background: var(--paper);
-  color: var(--ink);
-  min-height: auto;
+  color: #2c1810;
+  caret-color: var(--terracotta);
+}
+
+.add-form__input::placeholder {
+  color: #9a8770;
 }
 
 .add-form__btn {
@@ -87,19 +105,25 @@
 .dish-search {
   display: flex;
   flex-direction: column;
-  gap: 12rpx;
-  margin-bottom: 12rpx;
+  gap: 16rpx;
+  margin-bottom: 20rpx;
   flex-shrink: 0;
 }
 
 .dish-search__input {
+  height: 76rpx;
+  line-height: 40rpx;
   padding: 16rpx 20rpx;
   border: 2rpx solid rgba(44, 24, 16, 0.1);
   border-radius: var(--radius-sm);
   font-size: 26rpx;
   background: var(--paper);
-  color: var(--ink);
-  min-height: auto;
+  color: #2c1810;
+  caret-color: var(--terracotta);
+}
+
+.dish-search__input::placeholder {
+  color: #9a8770;
 }
 
 .dish-search__filters {
@@ -142,7 +166,7 @@
 .dish-list__count {
   font-size: 22rpx;
   color: var(--ink-soft);
-  margin-bottom: 16rpx;
+  margin-bottom: 20rpx;
   padding-bottom: 12rpx;
   border-bottom: 1rpx dashed rgba(44, 24, 16, 0.1);
   letter-spacing: 2rpx;
@@ -160,9 +184,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20rpx 24rpx;
+  padding: 24rpx;
   border-radius: var(--radius-sm);
-  margin-bottom: 12rpx;
+  margin-bottom: 16rpx;
   background: rgba(253, 248, 236, 0.5);
   border: 1rpx solid rgba(44, 24, 16, 0.05);
   gap: 16rpx;
@@ -325,13 +349,14 @@
 
 .dish-edit-form__input {
   flex: 1;
+  height: 68rpx;
+  line-height: 36rpx;
   padding: 12rpx 20rpx;
   border: 2rpx solid rgba(44, 24, 16, 0.12);
   border-radius: 12rpx;
   font-size: 26rpx;
   color: var(--ink);
   background: rgba(253, 248, 236, 0.6);
-  min-height: auto;
 }
 
 .dish-edit-form__input--weight {

@@ -15,11 +15,10 @@ const SEARCH_FILTERS = [
 
 // 给菜品加上展示用的预计算字段，避免在 wxml 中调用函数
 function decorateDish(dish) {
-  return {
-    ...dish,
+  return Object.assign({}, dish, {
     scenesText: dish.scenes.join(' · '),
     lastEatenText: dish.lastEaten ? formatLastEaten(dish.lastEaten) : '',
-  };
+  });
 }
 
 Page({
@@ -91,7 +90,7 @@ Page({
       isCustom: true,
     });
 
-    const dishes = [...this.data.dishes, newDish];
+    const dishes = this.data.dishes.concat(newDish);
     this.persistAndReload(dishes, newDish.id);
     this.setData({ inputValue: '' });
   },
@@ -112,7 +111,10 @@ Page({
     const id = e.currentTarget.dataset.id;
     const dishes = this.data.dishes.map(d => {
       if (d.id !== id) return d;
-      return decorateDish({ ...d, isBlacklisted: !d.isBlacklisted, weight: d.isBlacklisted ? 5 : 1 });
+      return decorateDish(Object.assign({}, d, {
+        isBlacklisted: !d.isBlacklisted,
+        weight: d.isBlacklisted ? 5 : 1,
+      }));
     });
     this.persistAndReload(dishes);
   },
@@ -141,7 +143,7 @@ Page({
       editForm: {
         name: dish.name,
         tags: dish.tags.join('、'),
-        scenes: [...dish.scenes],
+        scenes: dish.scenes.slice(),
         weight: String(dish.weight),
       },
     });
@@ -157,7 +159,7 @@ Page({
     const scene = e.currentTarget.dataset.scene;
     const scenes = this.data.editForm.scenes.includes(scene)
       ? this.data.editForm.scenes.filter(s => s !== scene)
-      : [...this.data.editForm.scenes, scene];
+      : this.data.editForm.scenes.concat(scene);
     this.setData({ 'editForm.scenes': scenes });
   },
 
@@ -184,11 +186,33 @@ Page({
 
     const dishes = this.data.dishes.map(d => {
       if (d.id !== id) return d;
-      return decorateDish({ ...d, name, tags: tags.length > 0 ? tags : ['自定义'], scenes, weight });
+      return decorateDish(Object.assign({}, d, {
+        name,
+        tags: tags.length > 0 ? tags : ['自定义'],
+        scenes,
+        weight,
+      }));
     });
 
     this.persistAndReload(dishes, id);
     this.setData({ editingId: null, editForm: null });
+  },
+
+  clearDishes() {
+    if (this.data.dishes.length === 0) {
+      wx.showToast({ title: '已经是空的啦', icon: 'none' });
+      return;
+    }
+    wx.showModal({
+      title: '确认清空',
+      content: '确定要清空所有菜品吗？清空后转盘将无法抽选。',
+      success: (res) => {
+        if (res.confirm) {
+          this.persistAndReload([]);
+          wx.showToast({ title: '已清空所有菜品', icon: 'none' });
+        }
+      },
+    });
   },
 
   resetDishes() {
@@ -218,8 +242,16 @@ Page({
     const state = getInitialState();
     state.dishes = dishes.map(d => {
       // 存储时去掉展示用的预计算字段
-      const { scenesText, lastEatenText, ...rest } = d;
-      return rest;
+      return {
+        id: d.id,
+        name: d.name,
+        tags: d.tags,
+        scenes: d.scenes,
+        weight: d.weight,
+        lastEaten: d.lastEaten,
+        isBlacklisted: d.isBlacklisted,
+        isCustom: d.isCustom,
+      };
     });
     saveData(state);
     this.setData({ dishes, highlightId: highlightId || null }, () => {

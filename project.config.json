@@ -49,7 +49,7 @@
   },
   "compileType": "miniprogram",
   "miniprogramRoot": "miniprogram/",
-  "libVersion": "3.0.0",
+  "libVersion": "3.6.1",
   "appid": "wxbc680f009da37b55",
   "projectname": "WhatToEat",
   "condition": {},

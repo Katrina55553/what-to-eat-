@@ -28,10 +28,18 @@
 
     <view class="wheel-section">
       <view class="wheel-glow"></view>
-      <view class="wheel-container {{isSpinning ? 'wheel-container--spinning' : ''}}" id="wheelContainer" style="transform: rotate({{wheelRotation}}deg);">
-        <view class="wheel-ring"></view>
+      <view class="wheel-wrapper">
+        <view class="wheel-container {{isSpinning ? 'wheel-container--spinning' : ''}}" id="wheelContainer" style="transform: rotate({{wheelRotation}}deg);">
+          <view class="wheel-ring"></view>
+          <view wx:if="{{wheelSegments.length === 0}}" class="wheel-empty">
+            <text class="wheel-empty__title">暂无可选菜品</text>
+            <text class="wheel-empty__sub">点击下方菜品管理添加</text>
+          </view>
+          <view wx:for="{{wheelSegments}}" wx:key="index" class="wheel-segment" style="clip-path: polygon({{item.clipPath}}); background: {{item.color}};">
+            <text class="wheel-segment__text" style="left: {{item.textX}}%; top: {{item.textY}}%; transform: translate(-50%, -50%) rotate({{item.textAngle}}deg); font-size: {{item.fontSize}}rpx;">{{item.name}}</text>
+          </view>
+        </view>
         <view class="wheel-container__pointer"></view>
-        <canvas class="wheel-container__canvas" type="2d" id="wheelCanvas"></canvas>
         <button class="wheel-container__center" id="wheelCenter" type="default" aria-label="开始抽选" disabled="{{wheelDisabled || isSpinning}}" bindtap="spinWheel">
           <text class="wheel-container__center-icon">🎯</text>
           <text class="wheel-container__center-text">GO</text>
