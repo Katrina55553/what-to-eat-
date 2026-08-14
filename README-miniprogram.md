@@ -28,7 +28,7 @@ miniprogram/
 
 - 页面拆分为 `pages/index` + `pages/manage`。
 - 本地存储从 `localStorage` 改为 `wx.getStorageSync` / `wx.setStorageSync`。
-- 转盘 Canvas 使用小程序 `type="2d"` 接口。
+- 转盘使用 `view` + `clip-path` 多段弧采样绘制扇区，旋转用 CSS `transform` + `transition` 驱动（避免逐帧 `setData` 卡顿），网页版则用 Canvas API。
 - 音效按钮目前以轻震动反馈替代 Web Audio，避免小程序音频需要用户手势解锁的问题。
 - 分享使用原生 `onShareAppMessage`。
 - 菜品管理从弹窗改为独立页面。

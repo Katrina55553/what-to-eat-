@@ -65,9 +65,11 @@ const PRESET_DISHES = [
   { name: '豆腐脑', tags: ['小吃类', '早餐'], scenes: ['早餐'] },
 ];
 
+let idCounter = 0;
 function generateId() {
-  // 小程序环境中没有 crypto.randomUUID，统一使用时间戳+随机数
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  // 时间戳+自增计数器+随机数，避免同毫秒批量添加时的碰撞
+  idCounter += 1;
+  return Date.now().toString(36) + idCounter.toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
 function loadData() {

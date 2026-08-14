@@ -118,7 +118,7 @@
 
 ### 📱 小程序版
 - **框架**：原生微信小程序
-- **动画**：小程序 Canvas 2D
+- **动画**：CSS transform + clip-path 转盘
 - **存储**：wx.getStorageSync
 - **分享**：原生 onShareAppMessage
 - **反馈**：wx.vibrateShort 轻震动

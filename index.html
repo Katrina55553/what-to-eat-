@@ -1734,6 +1734,16 @@ function formatLastEaten(timestamp) {
   return '很久以前吃过';
 }
 
+function escapeHtml(str) {
+  // 防止菜品名/标签中的特殊字符导致 XSS 或属性注入
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 let state = {
   dishes: [],
   currentScene: '不限',
@@ -1799,9 +1809,9 @@ function toggleSound() {
   soundEnabled = !soundEnabled;
   const btn = document.getElementById('soundBtn');
   btn.textContent = soundEnabled ? '音效开' : '音效关';
-  const data = loadData() || state;
-  data.soundEnabled = soundEnabled;
-  localStorage.setItem('whatToEat', JSON.stringify(data));
+  // 同步 state.soundEnabled 并统一走 saveData，保持数据模型一致
+  state.soundEnabled = soundEnabled;
+  saveData(state);
 }
 
 function createBgDecoration() {
@@ -1898,6 +1908,9 @@ function initSceneBarEvents() {
     state.currentScene = btn.dataset.scene;
     saveData(state);
     renderSceneBar();
+    // 切换场景后刷新转盘并清空抽选结果，避免显示上一场景的菜品
+    renderWheel();
+    hideResult();
   });
 }
 
@@ -1947,11 +1960,11 @@ function renderWheel() {
     const emptyTextColor = 'rgba(44, 24, 16, 0.78)';
     const emptySubTextColor = 'rgba(44, 24, 16, 0.52)';
     ctx.fillStyle = emptyTextColor;
-    ctx.font = 'bold 14px var(--font-sans)';
+    ctx.font = `bold 14px ${CANVAS_FONT}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('暂无可选菜品', WHEEL_CENTER, WHEEL_CENTER - 12);
-    ctx.font = '12px var(--font-sans)';
+    ctx.font = `12px ${CANVAS_FONT}`;
     ctx.fillStyle = emptySubTextColor;
     ctx.fillText('点击下方“菜品管理”添加', WHEEL_CENTER, WHEEL_CENTER + 14);
     return;
@@ -2167,12 +2180,12 @@ function renderDishList(highlightId) {
   list.innerHTML = filtered.map(dish => `
     <li class="dish-list__item${dish.isBlacklisted ? ' dish-list__item--blacklisted' : ''}${dish.id === highlightId ? ' dish-list__item--highlighted' : ''}" data-id="${dish.id}">
       <div class="dish-list__info">
-        <span class="dish-list__name">${dish.isBlacklisted ? '<s>' : ''}${dish.name}${dish.isBlacklisted ? '</s>' : ''}</span>
+        <span class="dish-list__name">${dish.isBlacklisted ? '<s>' : ''}${escapeHtml(dish.name)}${dish.isBlacklisted ? '</s>' : ''}</span>
         <div class="dish-list__meta">
           <span class="dish-list__tags">
-            ${dish.tags.map(t => `<span class="dish-list__tag">${t}</span>`).join('')}
+            ${dish.tags.map(t => `<span class="dish-list__tag">${escapeHtml(t)}</span>`).join('')}
           </span>
-          <span class="dish-list__scenes">${dish.scenes.join(' · ')}</span>
+          <span class="dish-list__scenes">${dish.scenes.map(escapeHtml).join(' · ')}</span>
           <span class="dish-list__weight">权重 ${dish.weight}</span>
           ${dish.lastEaten ? `<span class="dish-list__last-eaten">${formatLastEaten(dish.lastEaten)}</span>` : ''}
         </div>
@@ -2250,11 +2263,11 @@ function startEditDish(dishId) {
     <div class="dish-edit-form">
       <div class="dish-edit-form__row">
         <span class="dish-edit-form__label">名称</span>
-        <input class="dish-edit-form__input" id="editName_${dishId}" value="${dish.name}" maxlength="20">
+        <input class="dish-edit-form__input" id="editName_${dishId}" value="${escapeHtml(dish.name)}" maxlength="20">
       </div>
       <div class="dish-edit-form__row">
         <span class="dish-edit-form__label">标签</span>
-        <input class="dish-edit-form__input" id="editTags_${dishId}" value="${dish.tags.join('、')}" placeholder="用逗号或顿号分隔" maxlength="30">
+        <input class="dish-edit-form__input" id="editTags_${dishId}" value="${dish.tags.map(escapeHtml).join('、')}" placeholder="用逗号或顿号分隔" maxlength="30">
       </div>
       <div class="dish-edit-form__row">
         <span class="dish-edit-form__label">场景</span>
@@ -2459,6 +2472,7 @@ function bindEvents() {
 }
 
 initState();
+setupCanvasDPI();
 renderSceneBar();
 initSceneBarEvents();
 renderFilterBar();

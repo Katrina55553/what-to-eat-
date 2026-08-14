@@ -33,6 +33,7 @@ Page({
     resultEmoji: '',
     currentResult: null,
     wheelRotation: 0,
+    wheelTransition: '',
   },
 
   onLoad() {
@@ -46,10 +47,6 @@ Page({
     });
     this.computeWheelSegments();
     this.initAudio();
-  },
-
-  onReady() {
-    this.computeWheelSegments();
   },
 
   onShow() {
@@ -86,6 +83,10 @@ Page({
   },
 
   onUnload() {
+    if (this.tickTimer) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
+    }
     if (this.tickAudio) this.tickAudio.destroy();
     if (this.resultAudio) this.resultAudio.destroy();
   },
@@ -113,14 +114,15 @@ Page({
       const midAngle = startAngle + sliceAngle / 2;
       const endAngle = startAngle + sliceAngle;
 
-      // clip-path polygon 坐标：中心 + 两个端点
+      // 沿弧线采样多个点，让 clip-path 外缘逼近真实圆弧而非弦
       const cx = 50, cy = 50, r = 50;
-      const x1 = cx + r * Math.cos(startAngle);
-      const y1 = cy + r * Math.sin(startAngle);
-      const x2 = cx + r * Math.cos(endAngle);
-      const y2 = cy + r * Math.sin(endAngle);
-
-      const clipPath = `${cx}% ${cy}%, ${x1}% ${y1}%, ${x2}% ${y2}%`;
+      const ARC_STEPS = 8;
+      const arcPoints = [];
+      for (let s = 0; s <= ARC_STEPS; s++) {
+        const a = startAngle + (sliceAngle * s) / ARC_STEPS;
+        arcPoints.push(`${(cx + r * Math.cos(a)).toFixed(3)}% ${(cy + r * Math.sin(a)).toFixed(3)}%`);
+      }
+      const clipPath = `${cx}% ${cy}%, ` + arcPoints.join(', ');
 
       // 文本位置
       const textX = 50 + textRadius * Math.cos(midAngle);
@@ -181,40 +183,43 @@ Page({
     const sliceAngle = 360 / dishes.length;
     const targetSliceCenter = selectedIndex * sliceAngle + sliceAngle / 2;
     const extraRotations = MIN_ROTATIONS * 360;
-    const startRotation = this.data.wheelRotation;
+    // 归一化起始角度，避免数值无限增长
+    const normalizedStart = this.data.wheelRotation % 360;
     const targetAngle = extraRotations + (360 - targetSliceCenter);
-    const finalRotation = startRotation + targetAngle;
+    const finalRotation = normalizedStart + targetAngle;
+
+    // 先开启 transition，回调中再设置目标角度，确保过渡生效；
+    // 用 CSS transition 代替逐帧 setData，避免跨桥通信卡顿
+    this.setData({ wheelTransition: `transform ${SPIN_DURATION}ms cubic-bezier(0.16, 1, 0.3, 1)` }, () => {
+      this.setData({ wheelRotation: finalRotation });
+    });
 
     const startTime = Date.now();
     let lastTickIndex = -1;
 
-    const animate = () => {
+    // 仅用定时器驱动音效，不再逐帧更新转盘角度
+    this.tickTimer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / SPIN_DURATION, 1);
       const eased = 1 - Math.pow(1 - progress, 4);
-      const currentRotation = startRotation + eased * targetAngle;
-
-      this.setData({ wheelRotation: currentRotation });
-
+      const currentRotation = normalizedStart + eased * targetAngle;
       const tickIndex = Math.floor((currentRotation % 360) / sliceAngle);
       if (tickIndex !== lastTickIndex) {
         lastTickIndex = tickIndex;
         this.playTickSound();
       }
-
-      if (progress < 1) {
-        setTimeout(animate, 16);
-      } else {
+      if (progress >= 1) {
+        clearInterval(this.tickTimer);
+        this.tickTimer = null;
         this.setData({
           isSpinning: false,
+          wheelTransition: '',
           wheelRotation: finalRotation % 360,
         });
-        this.showResult(`今天吃 ${selected.name}！`);
+        this.showResult(selected);
         this.playResultSound();
       }
-    };
-
-    animate();
+    }, 33);
   },
 
   playTickSound() {
@@ -234,14 +239,15 @@ Page({
     }
   },
 
-  showResult(text, emoji) {
+  showResult(dish, emoji) {
     const randomEmoji = emoji || FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)];
     this.setData({
       showResultCard: true,
       showResultActions: true,
-      resultText: text,
+      resultText: `今天吃 ${dish.name}！`,
       resultEmoji: randomEmoji,
-      currentResult: { name: text.replace(/今天吃 |！/g, '') },
+      // 保留完整菜品对象，避免重名菜品时更新错条目
+      currentResult: dish,
     });
   },
 
@@ -257,18 +263,23 @@ Page({
 
   confirmChoice() {
     if (!this.data.currentResult) return;
-    const name = this.data.currentResult.name;
-    const dish = this.data.dishes.find(d => d.name === name);
-    if (dish) {
-      dish.lastEaten = Date.now();
-      dish.weight = Math.min(dish.weight + 1, 10);
-      this.data.dishes.forEach(d => {
-        if (d.id !== dish.id && d.tags.some(t => dish.tags.includes(t))) {
-          d.weight = Math.max(d.weight - 1, 1);
-        }
-      });
-      this.persistState();
-    }
+    const result = this.data.currentResult;
+    // 构造新数组并走 setData，避免直接 mutate this.data
+    const dishes = this.data.dishes.map(d => {
+      if (d.id === result.id) {
+        return Object.assign({}, d, {
+          lastEaten: Date.now(),
+          weight: Math.min(d.weight + 1, 10),
+        });
+      }
+      // 同标签菜品降权
+      if (d.tags.some(t => result.tags.includes(t))) {
+        return Object.assign({}, d, { weight: Math.max(d.weight - 1, 1) });
+      }
+      return d;
+    });
+    this.setData({ dishes });
+    this.persistState();
     this.hideResult();
     this.computeWheelSegments();
   },

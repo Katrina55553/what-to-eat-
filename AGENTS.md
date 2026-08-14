@@ -27,4 +27,4 @@ Open `index.html` directly in a browser. No dev server needed.
 
 - Modifying `index.html` affects structure, style, and behavior simultaneously — keep changes scoped.
 - localStorage data is per-browser; clearing site data loses user dishes.
-- The wheel uses weighted random selection — weights are 1–10, adjusted by recency and blacklist status.
+- The wheel uses weighted random selection — weights are 1–10, adjusted by selection history and blacklist status.

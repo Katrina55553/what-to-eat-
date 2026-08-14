@@ -20,7 +20,7 @@ page {
   --radius: 14rpx;
   --radius-lg: 22rpx;
   --radius-xl: 30rpx;
-  --font-serif: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-serif: "Songti SC", "STSong", "SimSun", serif;
   --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, sans-serif;
 
   font-family: var(--font-sans);
